@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -8,78 +7,84 @@
   <title>Notes App</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet"> 
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles/reset.css">
   <link rel="stylesheet" href="./styles/styles.css">
 
 </head>
 
 <body>
-  <section>
-    <table>
-      <thead>
-        <tr>
-          <th></th>
-          <th>Name</th>
-          <th>Created</th>
-          <th>Category</th>
-          <th>Content</th>
-          <th>Dates</th>
-          <th></th>
-          <th></th>
-          <th></th>
-        </tr>
-        <tr>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-        </tr>
-        <tr>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-        </tr>
-        <tr>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-        </tr>
-        <tr>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-        </tr>
+  <section class="main-page">
+    <div class="wrapper">
 
-      </thead>
-      <tbody>
+      <div class="main-page-row">
+        <div class="notes-container">
 
-      </tbody>
-
-    </table>
+          <table>
+            <thead>
+              <tr>
+                <th width="5%"></th>
+                <th width="25%">Name</th>
+                <th width="10%">Created</th>
+                <th width="10%">Category</th>
+                <th width="25%">Content</th>
+                <th width="10%">Dates</th>
+                <th width="5%"></th>
+                <th width="5%"></th>
+                <th width="5%"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+          <button class="create-note-button" id="create-btn">Create</button>
+        </div>
+      </div>
+    </div>
   </section>
 
   <section>
@@ -96,34 +101,34 @@
   <div class="modal-bgd" id="form-modal">
     <div class="modal-form-container">
       <button class="close-btn">x</button>
-      <form action="#" class="modal-form" data-netlify="true" id="form" >
-        <h4 class="modal-form-title">Поділися, будь ласка, поштою</h4>
-        <p class="modal-form-descr">та запиши гуся до бандерозагону</p>
-  
+      <form action="#" class="modal-form" data-netlify="true" id="frm-note">
+        <h4 class="modal-form-title">Create new note</h4>
+        <p class="modal-form-descr">You can create and save your task here ....</p>
+
         <div class="modal-form-field">
           <label for="" class="modal-field-name">Name</label>
           <input type="text" class="modal-field-input" id="note-name" name="Name">
         </div>
         <div class="modal-form-field">
           <label for="" class="modal-field-name">Category</label>
-          <input type="text" class="modal-field-input" id="note-category" name="Category">
+          <select class="modal-field-input" id="note-category" name="Category"></select>
         </div>
         <div class="modal-form-field">
           <label for="" class="modal-field-name">Content</label>
+          <!--
           <input type="text" class="modal-field-input" id="note-content" name="Content">
+          -->
+          <textarea class="modal-field-input" id="note-content" name="Content" rows="5" cols="33"></textarea>
         </div>
         <div class="modal-form-field">
           <label for="" class="modal-field-name">Dates</label>
           <input type="text" class="modal-field-input" id="note-dates" name="Dates">
         </div>
-  
-        <button class="modal-form-button" id="launch-btn">Cancel</button>
         <button class="modal-form-button" id="launch-btn">Save</button>
-  
       </form>
     </div>
   </div>
-
+  <script type="text/javascript" src="./js/main.js"></script>
 </body>
 
 </html>
