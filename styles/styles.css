@@ -4,24 +4,57 @@ html,body {
   font-size: 14px;
 }
 
-table,
-table th,td {
-  border: 1px solid black;
+.tbl-active-notes {
+  display: flex;
+  justify-content: center;
 }
 
-th,td {
-  padding: 8px;
+table {
+  table-layout: fixed;
+  width: 1090px;
+}
+
+table,
+table th,td {
+  border-top: 10px solid white;
+  border-bottom: 10px solid white;
+  border-collapse: collapse;
+  vertical-align: middle;
+}
+
+table tr {
+  height: 55px;
 }
 
 thead {
-  text-align: center;
   vertical-align: middle;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-truncation {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;  
 }
 
 th {
   color: #fff;
   font-weight: 500;
   background: gray;
+}
+
+td {
+  background: #e5e6f0;
+  margin: 5px 0;
+}
+
+td,th {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;  
 }
 
 .wrapper {
@@ -39,8 +72,6 @@ th {
 }
 
 .main-page-row {
-  display: flex;
-  justify-content: center;
   height: 100%;
   padding: 20px;
 }
@@ -48,17 +79,27 @@ th {
 .notes-container {
   background: #FFFFFF;
   padding: 20px 20px;
-  /*align-self: center;*/
 }
 
 
+button {
+  border: none;
+  outline: none;
+  border-radius: 8px;
+}
 
+.btn {
+  margin: 10px 0;
+  padding: 10px 40px;
+  font-weight: 700;
+  display: flex;
+  justify-content: right;
+}
 
-
-
-
-
-
+.tbl-icon {
+  width: 35px;
+  height: 35px;
+}
 
 .modal-field-input {
   border: 1px solid #005BBB;
@@ -77,4 +118,20 @@ th {
 
 .input-success {
   border: 1px solid #005BBB;
+}
+
+label.modal-field-err {
+  color: red;
+  font-size: 0.8rem;
+}
+
+.dates:invalid {
+  border: 2px solid red;
+  content: "✖";
+  color: red;
+}
+
+.dates:valid {
+  content: "✓";
+  color: green;  
 }

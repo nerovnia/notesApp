@@ -1,12 +1,34 @@
 class Message {
-  constructor(t_icon, t_name, t_created, t_cathegory, t_content, t_dates) {
-    this.t_icon = t_icon;
-    this.t_name = t_name;
-    this.t_created = t_created;
-    this.t_cathegory = t_cathegory;
-    this.t_content = t_content;
-    this.t_dates = t_dates;
+  constructor(icon, name, created, cathegory, content, dates, status = "active") {
+    this._icon = icon;
+    this._name = name;
+    this._created = created;
+    this._cathegory = cathegory;
+    this._content = content;
+    this._dates = dates;
+    this._status = status;  // active or archived
+
+    refreshStatistics("add", cathegory);
   }
+
+  set icon(icon) { this._icon = icon; }
+  get icon() { return this._icon; }
+
+  set name(name) { this._name = name; }
+  get name() { return this._name; }
+
+  set cathegory(cathegory) { 
+    changeCathegory(this._cathegory, cathegory, this._status);
+    //refreshStatistics("update", cathegory);
+    this._cathegory = cathegory; 
+  }
+  get cathegory() { return this._cathegory; }
+
+  set content(content) { this._content = content; }
+  get content() { return this._content; }
+
+  set dates(dates) { this._dates = dates; }
+  get dates() { return this._dates; }
 }
 
 class Category {
@@ -15,6 +37,21 @@ class Category {
     this.name = name;
   }
 }
+
+// action: add, remove, update
+const refreshStatistics = (action, cathegory, changedField = "") => {
+  switch (action) {
+    case "add":
+      break;
+    case "remove":
+      break;
+    case "update":
+      break;
+  }
+};
+
+const activeMessages = new Map();
+const archiveMessages = new Map();
 
 const setInputError = (element) => {
   element.classList.remove("input-success");
@@ -63,21 +100,46 @@ categories.forEach((category, key) => {
   selCategory.insertAdjacentHTML("beforeend", ` <option value="${key}">${category.name}</option>`);
 });
 
-const addNoteRecord = record => {
+const addRecordToMap = record => {
 
 };
 
+const addRecordToTable = record => {
+  const row = `
+    <tr>
+      <td><img class="tbl-icon" src="${categories.get(record.categoryKey).icon}" alt="Category"/></td>
+      <td>${record.name}</td>
+      <td class="text-center">${record.created.toLocaleDateString()}</td>
+      <td>${record.category}</td>
+      <td>${record.content}</td>
+      <td class="text-center">${record.dates}</td>
+      <td class="text-center"><img class="tbl-icon" src="../images/edit.png" alt="Edit"/></td>
+      <td class="text-center"><img class="tbl-icon" src="../images/archive.png" alt="Archive"/></td>
+      <td class="text-center"><img class="tbl-icon" src="../images/delete.png" alt="Delete"/></td>
+    </tr>`;
+  console.log(categories.get(record.category));
+  //console.log(record.category_name);
+  document.querySelector("#active-records tbody").insertAdjacentHTML("afterbegin", row);
+};
+
+const addNoteRecord = record => {
+  addRecordToMap(record);
+  addRecordToTable(record);
+};
 
 document.querySelector("#frm-note").addEventListener("submit", event => {
   event.preventDefault();
   let inputsIsFull = true;
   for (const input of frmInputs.entries()) {
-    if ((input[1].value === "") || (input[1].value === "empty")) inputsIsFull = false; 
+    if ((input[1].value === "") || (input[1].value === "empty")) inputsIsFull = false;
   }
-  if(inputsIsFull)
+  if (inputsIsFull)
     addNoteRecord({
       name: frmInputs.get("note-name").value,
-      category: frmInputs.get("note-category").value,
+      created: new Date(),
+      //category_name: frmInputs.get("note-category").id,
+      categoryKey: frmInputs.get("note-category").value,
+      category: frmInputs.get("note-category").options[frmInputs.get("note-category").selectedIndex].text,
       content: frmInputs.get("note-content").value,
       dates: frmInputs.get("note-dates").value
     });

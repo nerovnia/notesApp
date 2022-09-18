@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -19,84 +20,47 @@
 
       <div class="main-page-row">
         <div class="notes-container">
+          <div class="tbl-active-notes">
+            <table id="active-records">
+              <thead>
+                <tr>
+                  <th width="5%"></th>
+                  <th width="15%">Name</th>
+                  <th width="15%">Created</th>
+                  <th width="15%">Category</th>
+                  <th width="15%">Content</th>
+                  <th width="20%">Dates</th>
+                  <th width="5%"></th>
+                  <th width="5%"><img class="tbl-icon" src="../images/archive_inverse.png" alt="Edit" /></th>
+                  <th><img class="tbl-icon" src="../images/delete_inverse.png" alt="Edit" /></th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+          <button class="btn" id="create-btn">Create</button>
 
           <table>
             <thead>
               <tr>
-                <th width="5%"></th>
-                <th width="25%">Name</th>
-                <th width="10%">Created</th>
-                <th width="10%">Category</th>
-                <th width="25%">Content</th>
-                <th width="10%">Dates</th>
-                <th width="5%"></th>
-                <th width="5%"></th>
-                <th width="5%"></th>
-              </tr>
+                <th width="10%"></th>
+                <th width="30%">Note Cathegory</th>
+                <th width="15%">Active</th>
+                <th width="15%">Archived</th>
+                <th></th>
             </thead>
             <tbody>
-              <tr>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-              <tr>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-              <tr>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-              <tr>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
+      
             </tbody>
+      
           </table>
-          <button class="create-note-button" id="create-btn">Create</button>
-        </div>
+              </div>
       </div>
     </div>
   </section>
 
   <section>
-    <table>
-      <thead>
-
-      </thead>
-      <tbody>
-
-      </tbody>
-
-    </table>
   </section>
   <div class="modal-bgd" id="form-modal">
     <div class="modal-form-container">
@@ -115,14 +79,15 @@
         </div>
         <div class="modal-form-field">
           <label for="" class="modal-field-name">Content</label>
-          <!--
-          <input type="text" class="modal-field-input" id="note-content" name="Content">
-          -->
           <textarea class="modal-field-input" id="note-content" name="Content" rows="5" cols="33"></textarea>
         </div>
         <div class="modal-form-field">
-          <label for="" class="modal-field-name">Dates</label>
+          <label for="" class="modal-field-name dates">Dates</label>
           <input type="text" class="modal-field-input" id="note-dates" name="Dates">
+        </div>
+        <div class="modal-form-err">
+          <label for="" class="modal-field-err">All form fields must be filled in!</label>
+          <label for="" class="modal-field-err">Please check field Dates! Format of dates must be: </label>
         </div>
         <button class="modal-form-button" id="launch-btn">Save</button>
       </form>
