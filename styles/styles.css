@@ -125,6 +125,11 @@ label.modal-field-err {
   font-size: 0.8rem;
 }
 
+
+
+
+
+
 .dates:invalid {
   border: 2px solid red;
   content: "✖";

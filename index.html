@@ -31,8 +31,8 @@
                   <th width="15%">Content</th>
                   <th width="20%">Dates</th>
                   <th width="5%"></th>
-                  <th width="5%"><img class="tbl-icon" src="../images/archive_inverse.png" alt="Edit" /></th>
-                  <th><img class="tbl-icon" src="../images/delete_inverse.png" alt="Edit" /></th>
+                  <th width="5%"><button><img class="tbl-icon" src="./images/archive_inverse.png" alt="Edit" /></button></th>
+                  <th><button><img class="tbl-icon" src="./images/delete_inverse.png" alt="Edit" /></button></th>
                 </tr>
               </thead>
               <tbody>
@@ -65,31 +65,27 @@
   <div class="modal-bgd" id="form-modal">
     <div class="modal-form-container">
       <button class="close-btn">x</button>
-      <form action="#" class="modal-form" data-netlify="true" id="frm-note">
+      <form action="#" class="modal-form" data-netlify="true" autocomplete="off" id="frm-note-create">
         <h4 class="modal-form-title">Create new note</h4>
         <p class="modal-form-descr">You can create and save your task here ....</p>
 
         <div class="modal-form-field">
           <label for="" class="modal-field-name">Name</label>
-          <input type="text" class="modal-field-input" id="note-name" name="Name">
+          <input type="text" class="modal-field-input" id="note-name__create" name="Name">
         </div>
         <div class="modal-form-field">
           <label for="" class="modal-field-name">Category</label>
-          <select class="modal-field-input" id="note-category" name="Category"></select>
+          <select class="modal-field-input" id="note-category__create" name="Category"></select>
         </div>
         <div class="modal-form-field">
           <label for="" class="modal-field-name">Content</label>
-          <textarea class="modal-field-input" id="note-content" name="Content" rows="5" cols="33"></textarea>
-        </div>
-        <div class="modal-form-field">
-          <label for="" class="modal-field-name dates">Dates</label>
-          <input type="text" class="modal-field-input" id="note-dates" name="Dates">
+          <textarea class="modal-field-input" id="note-content__create" name="Content" rows="5" cols="33"></textarea>
         </div>
         <div class="modal-form-err">
-          <label for="" class="modal-field-err">All form fields must be filled in!</label>
+          <label id="note-err__create" for="" class="modal-field-err">All form fields must be filled in!</label>
           <label for="" class="modal-field-err">Please check field Dates! Format of dates must be: </label>
         </div>
-        <button class="modal-form-button" id="launch-btn">Save</button>
+        <button class="modal-form-button btn" id="note-launch-btn__create">Create</button>
       </form>
     </div>
   </div>
