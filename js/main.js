@@ -1,11 +1,17 @@
 class Message {
-  constructor(name, created, cathegory, content, dates) {
-    this.#uuid = crypto.randomUUID();
+  #uuid;
+  #name;
+  #created;
+  #category;
+  #content;
+  #status;
+  constructor(name, category, content, uuid = crypto.randomUUID()) {
+    this.#uuid = uuid;
     this.#name = name;
-    this.#created = created;
-    this.#cathegory = cathegory;
+    this.#created = new Date();
+    this.#category = category;
     this.#content = content;
-    this.#dates = dates;
+    this.#status = "active";  // active or archived
   }
 
   get uuid() { return this.#uuid; }
@@ -13,52 +19,48 @@ class Message {
   set name(name) { this.#name = name; }
   get name() { return this.#name; }
 
-  set cathegory(cathegory) { 
-    changeCathegory(this.#cathegory, cathegory, this.#status);
+  get created() { return this.#created; }
+
+  set category(category) { 
+    //this.#changeCathegory(this.#cathegory, cathegory, this.#status);
     //refreshStatistics("update", cathegory);
-    this.#cathegory = cathegory; 
+    this.#category = category; 
   }
-  get cathegory() { return this.#cathegory; }
+  get category() { return this.#category; }
+
+  get icon() { return this.category.icon; }
 
   set content(content) { this.#content = content; }
   get content() { return this.#content; }
 
-  set dates(dates) { this.#dates = dates; }
-  get dates() { return this.#dates; }
-}
-
-class MessageVisual extends Message {
-  constructor(name, created, cathegory, content, dates) {
-    super(name, created, cathegory, content, dates);
-    this.#status = "active";  // active or archived
-  }
-
-  get rowHTMLTable() {
-    return `
-      <tr>
-        <td><img class="tbl-icon" src="${this.#cathegory.icon}" alt="Category"/></td>
-        <td>${this.#name}</td>
-        <td class="text-center">${record.created.toLocaleDateString()}</td>
-        <td>${this.#category.name}</td>
-        <td>${this.#content}</td>
-        <td class="text-center">${this.#dates}</td>
-        <td class="text-center"><button value="${this.#uuid}" name="note-edit"><img class="tbl-icon" src="../images/edit.png" alt="Edit"/></button></td>
-        <td class="text-center"><button value="${this.#uuid}" name="note-arch"><img class="tbl-icon" src="../images/archive.png" alt="Archive"/><button></td>
-        <td class="text-center"><button value="${this.#uuid}" name="note-delete"><img class="tbl-icon" src="../images/delete.png" alt="Delete"/><button></td>
-      </tr>`;
+  get dates() { 
+    /*  Need realise */
   }
 
   set status(status) {
     this.#status = status; 
   }
-
   get status() { return this.#status; }
 
-  get icon() { return this.#cathegory.icon; }
-
+  get rowHTMLTable() {
+    return `
+      <tr>
+        <td><img class="tbl-icon" src="${this.category.icon}" alt="Category"/></td>
+        <td>${this.name}</td>
+        <td class="text-center">${record.created.toLocaleDateString()}</td>
+        <td>${this.category.name}</td>
+        <td>${this.content}</td>
+        <td class="text-center">${this.dates}</td>
+        <td class="text-center"><button value="${this.uuid}" name="note-edit"><img class="tbl-icon" src="../images/edit.png" alt="Edit"/></button></td>
+        <td class="text-center"><button value="${this.uuid}" name="note-arch"><img class="tbl-icon" src="../images/archive.png" alt="Archive"/><button></td>
+        <td class="text-center"><button value="${this.uuid}" name="note-delete"><img class="tbl-icon" src="../images/delete.png" alt="Delete"/><button></td>
+      </tr>`;
+  }  
 }
 
 class Category {
+  #icon;
+  #name;
   constructor(icon, name) {
     this.#icon = icon;
     this.#name = name;
@@ -70,18 +72,21 @@ class Category {
 }
 
 class MessageHTMLForm {
-  /*
+  #block;
   #form;
   #inpMessageName;
   #inpMessageCategory;
   #inpMessageContent;
-  #errElement;*/
-  constructor(form, inpMessageName, inpMessageCategory, inpMessageContent, inpMessageDates, errElement, mapCategories) {
+  #errElement;
+  constructor(block, form, inpMessageName, inpMessageCategory, inpMessageContent, errElement, categoriesMap) {
+    this.#block = block;
     this.#form = form;
     this.#inpMessageName = inpMessageName;
     this.#inpMessageCategory = inpMessageCategory;
     this.#inpMessageContent = inpMessageContent;
     this.#errElement = errElement;
+
+    this.#fillCategories(categoriesMap);
 
     this.#form.addEventListener('submit', this.addSubmitEventListener);
     this.#inpMessageName.addEventListener('blur', this.addBlurEventListener);
@@ -94,23 +99,35 @@ class MessageHTMLForm {
   get inpMessageCategory() { return this.#inpMessageCategory; }
   get inpMessageContent() { return this.#inpMessageContent; }
   
-  get #allElements() { return [this.#inpMessageName, this.#inpMessageCategory, this.#inpMessageContent];}
+
+  #fillCategories(categoriesMap) {
+    this.#inpMessageCategory.insertAdjacentHTML("beforeend", ` <option value="empty">-- Select category --</option>`);
+    categoriesMap.forEach((category, key) => {
+      this.#inpMessageCategory.insertAdjacentHTML("beforeend", ` <option value="${key}">${category.name}</option>`);
+    });
+  }
+
 
   #checkName() {
     return this.#inpMessageName.value !== "";
   }
 
   #checkCategory() {
-    return ((this.#inpCategory.options.length > 0)&&(this.#inpCategory.selectedIndex !== 0));
-    //return this.#inpCategory.options[this.#inpCategory.selectedIndex].text !== "";
+    return ((this.#inpMessageCategory.options.length > 0)&&(this.#inpMessageCategory.options[this.#inpMessageCategory.selectedIndex].value !== "empty"));
   }
 
   #checkContent() {
-    return this.#inpMessageName.value !== "";
+    return this.#inpMessageContent.value !== "";
   }
 
-  #printError(err) {
-    this.#errElement.textContent = err;
+  showError(err) {
+    this.#errElement.block.classList.remove("hide");
+    this.#errElement.label.textContent = err;
+  }
+
+  hideError() {
+    this.#errElement.block.classList.add("hide");
+    this.#errElement.label.textContent = "";
   }
 
   isValid() {
@@ -121,7 +138,7 @@ class MessageHTMLForm {
     } else {
       MessageHTMLForm.#unsetInputError(this.#inpMessageName)
     }
-   
+  
     if (!this.#checkCategory()) {
       valid = false;
       MessageHTMLForm.#setInputError(this.#inpMessageCategory)
@@ -148,11 +165,21 @@ class MessageHTMLForm {
   }
 
   addSubmitEventListener(event) {
-    let messageForm = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === event.currentTarget.id));
-    if (!messageForm.isEmpty) {
-      if (messageForm[0].isValid()) {
-        alert('Data in form is valid!')
+    event.preventDefault();
+    let noteForms = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === event.currentTarget.id));
+    if (!noteForms.isEmpty) {
+      let noteForm = noteForms[0];
+      if (noteForm.isValid()) {
+        noteForm.hideError();
+        statistics.createNote({ 
+          name: noteForm.inpMessageName.value, 
+          category: noteForm.inpMessageCategory.options[noteForm.inpMessageCategory.selectedIndex].value, 
+          content: noteForm.inpMessageContent.value 
+        });
+        event.currentTarget.reset();
+        return;
       }
+      noteForm.showError("All form's fields must be filled in!");
     }
   }
 
@@ -178,117 +205,169 @@ mapCategories.set("randth", new Category("../images/random_thought.png", "Random
 mapCategories.set("idea", new Category("../images/idea.png", "Idea"));
 mapCategories.set("quote", new Category("../images/quote.png", "Quote"));
 
-const selCategory = document.querySelector("#note-category__create");
-selCategory.insertAdjacentHTML("beforeend", ` <option value="empty">-- Select category --</option>`);
-mapCategories.forEach((category, key) => {
-  console.log(category, key);
-  selCategory.insertAdjacentHTML("beforeend", ` <option value="${key}">${category.name}</option>`);
-});
-
-//const frmCreateMessage = new MessageHTMLForm(
 globalThis.MessageHTMLForms = [];
 globalThis.MessageHTMLForms.push(new MessageHTMLForm(
+  document.querySelector("#form-modal-note-create"), 
   document.querySelector("#frm-note-create"), 
   document.querySelector("#note-name__create"), 
   document.querySelector("#note-category__create"), 
-  document.querySelector("#note-content__create"), 
-  document.querySelector("#note-dates__create"), 
-  document.querySelector("#note-dates__create"), 
-  document.querySelector("#note-err__create")
+  document.querySelector("#note-content__create"),
+  {
+    block: document.querySelector("#modal-form-err-create"),
+    label: document.querySelector("#modal-form-err__create")
+  },
+  mapCategories
+));
+
+globalThis.MessageHTMLForms.push(new MessageHTMLForm(
+  document.querySelector("#form-modal-note-edit"), 
+  document.querySelector("#frm-note-edit"), 
+  document.querySelector("#note-name__edit"), 
+  document.querySelector("#note-category__edit"), 
+  document.querySelector("#note-content__edit"),
+  {
+    block: document.querySelector("#modal-form-err-edit"),
+    label: document.querySelector("#modal-form-err__edit")
+  },
+  mapCategories
 ));
 
 const statistics = {
-  activeNotes: [],
-  archivesNotes: [],
-
-  createNote: function(note_data) {
-    const note = new MessageVisual(note_data.name, note_data.created, note_data.cathegory, note_data.content, note_data.dates);
-    this.activeNotes.push(note);
-    this.refresh(note.cathegory, note.status);
+  catTask: {
+    active: 0,
+    archived: 0
   },
-
-  deleteNote: function(uuid) {
-    const node = "";
-    //const cathegory = 
+  catRandomThoughts: {
+    active: 0,
+    archived: 0
   },
-
-  archiveNote: function(note) {
-
+  catIdea: {
+    active: 0,
+    archived: 0
   },
-
-  activateNote: function(note) {
-
+  catQuote: {
+    active: 0,
+    archived: 0
   },
+  notesMap: new Map(),
 
-  refresh(cathegory, status) {
-    
-  }
-}
-
-
-
-/*
-// action: add, remove, update
-const refreshStatistics = (action, cathegory, changedField = "") => {
-  switch (action) {
-    case "add":
-      break;
-    case "remove":
-      break;
-    case "update":
-      break;
-  }
-};
-*/
-//const activeMessages = new Map();
-//const archiveMessages = new Map();
-
-
-/*
-const setInputError = (element) => {
-  element.classList.remove("input-success");
-  element.classList.add("input-error");
-}
-
-const unsetInputError = (element) => {
-  element.classList.add("input-success");
-  element.classList.remove("input-error");
-}
-
-const inputsToMap = (map) => {
-  let inp = document.querySelector("#note-name");;
-  map.set(inp.id, inp);
-  inp = document.querySelector("#note-category");
-  map.set(inp.id, inp);
-  inp = document.querySelector("#note-content");
-  map.set(inp.id, inp);
-  inp = document.querySelector("#note-dates");
-  map.set(inp.id, inp);
-};
-*/
-
-/*
-
-const frmInputs = new Map();
-inputsToMap(frmInputs)
-
-frmInputs.forEach(item => {
-  //console.log(item);
-  item.addEventListener('blur', event => {
-    if (event.currentTarget.value === "") {
-      setInputError(event.currentTarget);
-    } else {
-      unsetInputError(event.currentTarget);
+  createNote(note_data) {
+    let mess = new Message(
+      note_data.name, 
+      note_data.category, 
+      note_data.content
+      );
+    this.notesMap.set(mess.uuid, mess);
+    switch(mess.category) {
+      case 'task':
+        this.catTask.active++;
+        break;
+      case 'randth':
+        this.catRandomThoughts.active++;
+        break;
+      case 'idea':
+        this.catIdea.active++;
+        break;
+      case 'quote':
+        this.catQuote.active++;
+        break;
     }
-  });
-});
+    //console.log(this.notesMap);
+    //this.active++;  
+    //this.refresh(note);
+  },
 
-*/
+  editNote(note_data) {
+    /* Need realise */
+    throw error;
+  },
+
+  deleteNote(uuid) {
+    if (!this.notesMap.has(uuid)) {
+      return;
+    }
+    let mess = this.notesMap.get(uuid);
+    switch(mess.category) {
+      case 'task':
+        (mess.status === 'active') ? this.catTask.active--: this.catTask.archived--;
+        break;
+      case 'randth':
+        (mess.status === 'active') ? this.catRandomThoughts.active--: this.catRandomThoughts.archived--;
+        break;
+      case 'idea':
+        (mess.status === 'active') ? this.catIdea.active--: this.catIdea.archived--;
+        break;
+      case 'quote':
+        (mess.status === 'active') ? this.catQuote.active--: this.catQuote.archived--;
+        break;
+    };
+    this.notesMap.delete(uuid);
+  },
+
+  archiveNote(uuid) {
+    if (!this.notesMap.has(uuid)) {
+      return;
+    }
+    let mess = this.notesMap.get(uuid);
+    if (mess.status === 'active') {
+      switch(mess.category) {
+        case 'task':
+          this.catTask.active--; 
+          this.catTask.archived++;
+          break;
+        case 'randth':
+          this.catRandomThoughts.active--; 
+          this.catRandomThoughts.archived++;
+          break;
+        case 'idea':
+          this.catIdea.active--; 
+          this.catIdea.archived++;
+          break;
+        case 'quote':
+          this.catQuote.active--; 
+          this.catQuote.archived++;
+          break;
+      };
+    } 
+  },
+
+  activateNote(uuid) {
+    if (!this.notesMap.has(uuid)) {
+      return;
+    }
+    let mess = this.notesMap.get(uuid);
+    if (mess.status === 'archived') {
+      switch(mess.category) {
+        case 'task':
+          this.catTask.active++; 
+          this.catTask.archived--;
+          break;
+        case 'randth':
+          this.catRandomThoughts.active++; 
+          this.catRandomThoughts.archived--;
+          break;
+        case 'idea':
+          this.catIdea.active++; 
+          this.catIdea.archived--;
+          break;
+        case 'quote':
+          this.catQuote.active++; 
+          this.catQuote.archived--;
+          break;
+      };
+    } 
+  },
 /*
-const addRecordToMap = record => {
+  refresh(note) {
+     //Need realise 
+    throw error;
+  }
+*/  
+}
 
-};
-*/
+
+
+
 /*
 const addRecordToTable = record => {
   const row = `
@@ -306,12 +385,6 @@ const addRecordToTable = record => {
   console.log(categories.get(record.category));
   //console.log(record.category_name);
   document.querySelector("#active-records tbody").insertAdjacentHTML("afterbegin", row);
-};
-*/
-/*
-const addNoteRecord = record => {
-  addRecordToMap(record);
-  addRecordToTable(record);
 };
 */
 /*
@@ -333,29 +406,3 @@ document.querySelector("#frm-note-create").addEventListener("submit", event => {
     });
   event.currentTarget.reset();
 });*/
-
-
-
-
-/*
-document.querySelector("#frm-note-create").addEventListener("submit", event => {
-  event.preventDefault();
-  let inputsIsFull = true;
-  for (const input of frmInputs.entries()) {
-    if ((input[1].value === "") || (input[1].value === "empty")) inputsIsFull = false;
-  }
-  if (inputsIsFull)
-    statistics.createNote({
-      name: frmInputs.get("note-name").value,
-      created: new Date(),
-      categoryKey: frmInputs.get("note-category").value,
-      category: frmInputs.get("note-category").options[frmInputs.get("note-category").selectedIndex].text,
-      content: frmInputs.get("note-content").value,
-      dates: frmInputs.get("note-dates").value
-    });
-  event.currentTarget.reset();
-});
-*/
-/*
-All form fields must be filled in!
-*/

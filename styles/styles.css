@@ -126,10 +126,12 @@ label.modal-field-err {
 }
 
 
+.hide {
+  display: none;
+}
 
 
-
-
+/*
 .dates:invalid {
   border: 2px solid red;
   content: "✖";
@@ -140,3 +142,4 @@ label.modal-field-err {
   content: "✓";
   color: green;  
 }
+*/
