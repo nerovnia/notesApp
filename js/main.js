@@ -78,13 +78,15 @@ class MessageHTMLForm {
   #inpMessageCategory;
   #inpMessageContent;
   #errElement;
-  constructor(block, form, inpMessageName, inpMessageCategory, inpMessageContent, errElement, categoriesMap) {
+  #methodCloseForm
+  constructor(block, form, inpMessageName, inpMessageCategory, inpMessageContent, errElement, categoriesMap, methodCloseForm) {
     this.#block = block;
     this.#form = form;
     this.#inpMessageName = inpMessageName;
     this.#inpMessageCategory = inpMessageCategory;
     this.#inpMessageContent = inpMessageContent;
     this.#errElement = errElement;
+    this.#methodCloseForm = methodCloseForm;
 
     this.#fillCategories(categoriesMap);
 
@@ -98,7 +100,7 @@ class MessageHTMLForm {
   get inpMessageName() { return this.#inpMessageName; }
   get inpMessageCategory() { return this.#inpMessageCategory; }
   get inpMessageContent() { return this.#inpMessageContent; }
-  
+  get methodCloseForm() { return this.#methodCloseForm; }
 
   #fillCategories(categoriesMap) {
     this.#inpMessageCategory.insertAdjacentHTML("beforeend", ` <option value="empty">-- Select category --</option>`);
@@ -106,7 +108,6 @@ class MessageHTMLForm {
       this.#inpMessageCategory.insertAdjacentHTML("beforeend", ` <option value="${key}">${category.name}</option>`);
     });
   }
-
 
   #checkName() {
     return this.#inpMessageName.value !== "";
@@ -171,12 +172,14 @@ class MessageHTMLForm {
       let noteForm = noteForms[0];
       if (noteForm.isValid()) {
         noteForm.hideError();
-        statistics.createNote({ 
+        let noteObj = { 
           name: noteForm.inpMessageName.value, 
           category: noteForm.inpMessageCategory.options[noteForm.inpMessageCategory.selectedIndex].value, 
           content: noteForm.inpMessageContent.value 
-        });
+        };
+        (noteForm.form.id.includes("create"))? statistics.createNote(noteObj) : statistics.editNote(noteObj);
         event.currentTarget.reset();
+        noteForm.methodCloseForm();
         return;
       }
       noteForm.showError("All form's fields must be filled in!");
@@ -196,14 +199,75 @@ class MessageHTMLForm {
     element.classList.add("input-success");
     element.classList.remove("input-error");
   }
+
+  #resetInputElementsStyles() {
+    MessageHTMLForm.unsetInputError(this.#inpMessageName);
+    MessageHTMLForm.unsetInputError(this.#inpMessageCategory);
+    MessageHTMLForm.unsetInputError(this.#inpMessageContent);
+  }
   
 }
 
+
+//---------------------- 
 const mapCategories = new Map();
 mapCategories.set("task", new Category("../images/task.png", "Task"));
 mapCategories.set("randth", new Category("../images/random_thought.png", "Random Thought"));
 mapCategories.set("idea", new Category("../images/idea.png", "Idea"));
 mapCategories.set("quote", new Category("../images/quote.png", "Quote"));
+
+
+
+
+
+const MODAL_ACTIVE_CLASS_NAME = 'modal-active';
+
+const buttonCreateNote = document.querySelector("#btn-create-note"); 
+
+const formCreateNote = document.querySelector("#form-modal-note-create"); 
+const formEditNote = document.querySelector("#form-modal-note-edit"); 
+
+const btnCloseFormCreate = document.querySelector("#btn-close-form-create"); 
+const btnCloseFormEdit = document.querySelector("#btn-close-form-edit"); 
+
+buttonCreateNote.addEventListener("click", event => {
+  openCreateNoteModal();
+})
+
+btnCloseFormCreate.addEventListener("click", event => {
+  closeCreateNoteModal();
+})
+
+const openCreateNoteModal = () => {
+  formCreateNote.classList.add(MODAL_ACTIVE_CLASS_NAME);
+};
+
+const closeCreateNoteModal = () => {
+  formCreateNote.classList.remove(MODAL_ACTIVE_CLASS_NAME);
+  formCreateNote.resetInputElementsStyles();
+}
+
+//formEditNote.addEventListener("click", event => {
+//  openEditNoteModal();
+//})
+
+btnCloseFormEdit.addEventListener("click", event => {
+  closeEditNoteModal();
+})
+
+const openEditNoteModal = () => {
+  formEditNote.classList.add(MODAL_ACTIVE_CLASS_NAME);
+};
+
+const closeEditNoteModal = () => {
+  formEditNote.classList.remove(MODAL_ACTIVE_CLASS_NAME);
+  formEditNote.resetInputElementsStyles();
+}
+
+
+
+
+
 
 globalThis.MessageHTMLForms = [];
 globalThis.MessageHTMLForms.push(new MessageHTMLForm(
@@ -216,7 +280,8 @@ globalThis.MessageHTMLForms.push(new MessageHTMLForm(
     block: document.querySelector("#modal-form-err-create"),
     label: document.querySelector("#modal-form-err__create")
   },
-  mapCategories
+  mapCategories,
+  closeCreateNoteModal
 ));
 
 globalThis.MessageHTMLForms.push(new MessageHTMLForm(
@@ -229,7 +294,8 @@ globalThis.MessageHTMLForms.push(new MessageHTMLForm(
     block: document.querySelector("#modal-form-err-edit"),
     label: document.querySelector("#modal-form-err__edit")
   },
-  mapCategories
+  mapCategories,
+  closeEditNoteModal
 ));
 
 const statistics = {
@@ -278,8 +344,9 @@ const statistics = {
   },
 
   editNote(note_data) {
+    console.log(note_data)
     /* Need realise */
-    throw error;
+    //throw error;
   },
 
   deleteNote(uuid) {
@@ -364,9 +431,6 @@ const statistics = {
   }
 */  
 }
-
-
-
 
 /*
 const addRecordToTable = record => {

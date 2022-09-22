@@ -40,7 +40,7 @@
               </tbody>
             </table>
           </div>
-          <button class="btn" id="create-btn">Create</button>
+          <button class="btn" id="btn-create-note">Create</button>
 
           <table>
             <thead>
@@ -63,9 +63,9 @@
 
   <section>
   </section>
-  <div class="modal-bgd hide" id="form-modal-note-create">
+  <div class="modal-bgd" id="form-modal-note-create">
     <div class="modal-form-container">
-      <button class="close-btn">x</button>
+      <button class="close-btn" id="btn-close-form-create">x</button>
       <form action="#" class="modal-form" data-netlify="true" autocomplete="off" id="frm-note-create">
         <h4 class="modal-form-title">Create new note</h4>
         <p class="modal-form-descr">You can create and save your task here ....</p>
@@ -82,7 +82,7 @@
           <label for="" class="modal-field-name">Content</label>
           <textarea class="modal-field-input" id="note-content__create" name="Content" rows="5" cols="33"></textarea>
         </div>
-        <div id="modal-form-err-create" class="modal-form-err hide">
+        <div id="modal-form-err-create" class="modal-form-err">
           <label id="modal-form-err__create" for="" class="modal-field-err"></label>
         </div>
         <button class="modal-form-button btn" id="note-launch-btn__create">Create</button>
@@ -90,9 +90,9 @@
     </div>
   </div>
 
-  <div class="modal-bgd hide" id="form-modal-note-edit">
+  <div class="modal-bgd" id="form-modal-note-edit">
     <div class="modal-form-container">
-      <button class="close-btn">x</button>
+      <button class="close-btn" id="btn-close-form-edit">x</button>
       <form action="#" class="modal-form" data-netlify="true" autocomplete="off" id="frm-note-edit">
         <h4 class="modal-form-title">Edit note</h4>
         <p class="modal-form-descr">You can edit your note here ....</p>
@@ -109,7 +109,7 @@
           <label for="" class="modal-field-name">Content</label>
           <textarea class="modal-field-input" id="note-content__edit" name="Content" rows="5" cols="33"></textarea>
         </div>
-        <div id="modal-form-err-edit" class="modal-form-err hide">
+        <div id="modal-form-err-edit" class="modal-form-err">
           <label id="modal-form-err__edit" for="" class="modal-field-err"></label>
         </div>
         <button class="modal-form-button btn" id="note-launch-btn__edit">Save</button>
