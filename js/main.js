@@ -77,16 +77,18 @@ class MessageHTMLForm {
   #inpMessageName;
   #inpMessageCategory;
   #inpMessageContent;
+  #btnClose;
   #errElement;
-  #methodCloseForm
-  constructor(block, form, inpMessageName, inpMessageCategory, inpMessageContent, errElement, categoriesMap, methodCloseForm) {
+  static activeForm = null;
+  static MODAL_ACTIVE_CLASS_NAME = 'modal-active';
+  constructor(block, form, inpMessageName, inpMessageCategory, inpMessageContent, btnClose, errElement, categoriesMap) {
     this.#block = block;
     this.#form = form;
     this.#inpMessageName = inpMessageName;
     this.#inpMessageCategory = inpMessageCategory;
     this.#inpMessageContent = inpMessageContent;
+    this.#btnClose = btnClose;
     this.#errElement = errElement;
-    this.#methodCloseForm = methodCloseForm;
 
     this.#fillCategories(categoriesMap);
 
@@ -94,13 +96,15 @@ class MessageHTMLForm {
     this.#inpMessageName.addEventListener('blur', this.addBlurEventListener);
     this.#inpMessageCategory.addEventListener('blur', this.addBlurEventListener);
     this.#inpMessageContent.addEventListener('blur', this.addBlurEventListener);
+    this.#btnClose.addEventListener('click', this.closeForm);
   }
 
+  get block() { return this.#block; }
   get form() { return this.#form; }
+  get btnClose() { return this.#btnClose; }
   get inpMessageName() { return this.#inpMessageName; }
   get inpMessageCategory() { return this.#inpMessageCategory; }
   get inpMessageContent() { return this.#inpMessageContent; }
-  get methodCloseForm() { return this.#methodCloseForm; }
 
   #fillCategories(categoriesMap) {
     this.#inpMessageCategory.insertAdjacentHTML("beforeend", ` <option value="empty">-- Select category --</option>`);
@@ -179,7 +183,7 @@ class MessageHTMLForm {
         };
         (noteForm.form.id.includes("create"))? statistics.createNote(noteObj) : statistics.editNote(noteObj);
         event.currentTarget.reset();
-        noteForm.methodCloseForm();
+        noteForm.closeForm();
         return;
       }
       noteForm.showError("All form's fields must be filled in!");
@@ -200,27 +204,68 @@ class MessageHTMLForm {
     element.classList.remove("input-error");
   }
 
-  #resetInputElementsStyles() {
-    MessageHTMLForm.unsetInputError(this.#inpMessageName);
-    MessageHTMLForm.unsetInputError(this.#inpMessageCategory);
-    MessageHTMLForm.unsetInputError(this.#inpMessageContent);
+  showForm() {
+    MessageHTMLForm.activeForm = this;
+    this.#block.classList.add(MessageHTMLForm.MODAL_ACTIVE_CLASS_NAME);
   }
-  
+
+  closeForm(event) {
+    MessageHTMLForm.activeForm.block.classList.remove(MessageHTMLForm.MODAL_ACTIVE_CLASS_NAME);
+    //MessageHTMLForm.activeForm.resetInputElementsStyles(MessageHTMLForm.activeForm);
+    //MessageHTMLForm.resetInputElementsStyles();
+    MessageHTMLForm.activeForm = null;
+  }
+
+  resetInputElementsStyles() {
+    if (MessageHTMLForm !== null) {
+      MessageHTMLForm.unsetInputError(MessageHTMLForm.activeForm.inpMessageName);
+      MessageHTMLForm.unsetInputError(MessageHTMLForm.activeForm.inpMessageCategory);
+      MessageHTMLForm.unsetInputError(MessageHTMLForm.activeForm.inpMessageContent);
+    }
+  }
 }
 
-
 //---------------------- 
+
 const mapCategories = new Map();
 mapCategories.set("task", new Category("../images/task.png", "Task"));
 mapCategories.set("randth", new Category("../images/random_thought.png", "Random Thought"));
 mapCategories.set("idea", new Category("../images/idea.png", "Idea"));
 mapCategories.set("quote", new Category("../images/quote.png", "Quote"));
 
+globalThis.MessageHTMLForms = [];
+globalThis.MessageHTMLForms.push(new MessageHTMLForm(
+  document.querySelector("#form-modal-note-create"), 
+  document.querySelector("#frm-note-create"), 
+  document.querySelector("#note-name__create"), 
+  document.querySelector("#note-category__create"), 
+  document.querySelector("#note-content__create"),
+  document.querySelector("#btn-close-form-create"),
+  {
+    block: document.querySelector("#modal-form-err-create"),
+    label: document.querySelector("#modal-form-err__create")
+  },
+  mapCategories,
+  //closeCreateNoteModal
+));
 
+globalThis.MessageHTMLForms.push(new MessageHTMLForm(
+  document.querySelector("#form-modal-note-edit"), 
+  document.querySelector("#frm-note-edit"), 
+  document.querySelector("#note-name__edit"), 
+  document.querySelector("#note-category__edit"), 
+  document.querySelector("#note-content__edit"),
+  document.querySelector("#btn-close-form-edit"),
+  {
+    block: document.querySelector("#modal-form-err-edit"),
+    label: document.querySelector("#modal-form-err__edit")
+  },
+  mapCategories,
+  //closeEditNoteModal
+));
 
+//---------------------- 
 
-
-const MODAL_ACTIVE_CLASS_NAME = 'modal-active';
 
 const buttonCreateNote = document.querySelector("#btn-create-note"); 
 
@@ -231,20 +276,47 @@ const btnCloseFormCreate = document.querySelector("#btn-close-form-create");
 const btnCloseFormEdit = document.querySelector("#btn-close-form-edit"); 
 
 buttonCreateNote.addEventListener("click", event => {
-  openCreateNoteModal();
-})
+//  let noteForm = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === "frm-note-create"));
+  let noteForm = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === "frm-note-create"));
+  noteForm[0].showForm();
+//  console.log(globalThis.MessageHTMLForms[0]);
+//  console.log(noteForm[0]);
+//  noteForm[0].showForm();
 
+  //openCreateNoteModal();
+})
+/*
 btnCloseFormCreate.addEventListener("click", event => {
-  closeCreateNoteModal();
-})
+  //closeCreateNoteModal(event);
 
+  formCreateNote.classList.remove(MODAL_ACTIVE_CLASS_NAME);
+  let noteForm = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === event.currentTarget.id));
+  console.log("=------------------------------");
+  console.log(noteForm);
+  //noteForm.resetInputElementsStyles();
+
+
+
+})
+*/
+
+/*
 const openCreateNoteModal = () => {
-  formCreateNote.classList.add(MODAL_ACTIVE_CLASS_NAME);
+  formCreateNote.classList.add(MessageHTMLForm.MODAL_ACTIVE_CLASS_NAME);
 };
 
-const closeCreateNoteModal = () => {
+const openEditNoteModal = () => {
+  formEditNote.classList.add(MessageHTMLForm.MODAL_ACTIVE_CLASS_NAME);
+};
+
+*/
+
+/*
+const closeCreateNoteModal = (event) => {
   formCreateNote.classList.remove(MODAL_ACTIVE_CLASS_NAME);
-  formCreateNote.resetInputElementsStyles();
+  let noteForm = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === event.currentTarget.id));
+  console.log(noteForm);
+  //formCreateNote.resetInputElementsStyles();
 }
 
 //formEditNote.addEventListener("click", event => {
@@ -255,48 +327,18 @@ btnCloseFormEdit.addEventListener("click", event => {
   closeEditNoteModal();
 })
 
-const openEditNoteModal = () => {
-  formEditNote.classList.add(MODAL_ACTIVE_CLASS_NAME);
-};
 
 const closeEditNoteModal = () => {
   formEditNote.classList.remove(MODAL_ACTIVE_CLASS_NAME);
   formEditNote.resetInputElementsStyles();
 }
+*/
 
 
 
 
 
 
-globalThis.MessageHTMLForms = [];
-globalThis.MessageHTMLForms.push(new MessageHTMLForm(
-  document.querySelector("#form-modal-note-create"), 
-  document.querySelector("#frm-note-create"), 
-  document.querySelector("#note-name__create"), 
-  document.querySelector("#note-category__create"), 
-  document.querySelector("#note-content__create"),
-  {
-    block: document.querySelector("#modal-form-err-create"),
-    label: document.querySelector("#modal-form-err__create")
-  },
-  mapCategories,
-  closeCreateNoteModal
-));
-
-globalThis.MessageHTMLForms.push(new MessageHTMLForm(
-  document.querySelector("#form-modal-note-edit"), 
-  document.querySelector("#frm-note-edit"), 
-  document.querySelector("#note-name__edit"), 
-  document.querySelector("#note-category__edit"), 
-  document.querySelector("#note-content__edit"),
-  {
-    block: document.querySelector("#modal-form-err-edit"),
-    label: document.querySelector("#modal-form-err__edit")
-  },
-  mapCategories,
-  closeEditNoteModal
-));
 
 const statistics = {
   catTask: {
