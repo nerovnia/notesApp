@@ -9,9 +9,18 @@ class Message {
     this.#uuid = uuid;
     this.#name = name;
     this.#created = new Date();
-    this.#category = category;
+    this.#category = Message.mapCategories.get(category);
     this.#content = content;
     this.#status = "active";  // active or archived
+  }
+
+  static get mapCategories() { 
+    const mapCategories = new Map();
+    mapCategories.set("task", new Category("./images/task.png", "Task"));
+    mapCategories.set("randth", new Category("./images/random_thought.png", "Random Thought"));
+    mapCategories.set("idea", new Category("./images/idea.png", "Idea"));
+    mapCategories.set("quote", new Category("./images/quote.png", "Quote"));
+    return mapCategories;
   }
 
   get uuid() { return this.#uuid; }
@@ -34,7 +43,10 @@ class Message {
   get content() { return this.#content; }
 
   get dates() { 
-    /*  Need realise */
+    //const re = /\d{1,2}\/d{1,2}\/d{2,4}/g;
+    const re = /(0?[1-9]|[12]\d|30|31)[^\w\d\r\n:](0?[1-9]|1[0-2])[^\w\d\r\n:](\d{4}|\d{2})/g;
+    return this.content.match(re)?.join();
+   //   Need realise 
   }
 
   set status(status) {
@@ -45,17 +57,63 @@ class Message {
   get rowHTMLTable() {
     return `
       <tr>
-        <td><img class="tbl-icon" src="${this.category.icon}" alt="Category"/></td>
+        <td><img class="tbl-icon" src="${this.#category.icon}" alt="Category"/></td>
         <td>${this.name}</td>
-        <td class="text-center">${record.created.toLocaleDateString()}</td>
+        <td class="text-center">${this.created.toLocaleDateString()}</td>
         <td>${this.category.name}</td>
         <td>${this.content}</td>
-        <td class="text-center">${this.dates}</td>
-        <td class="text-center"><button value="${this.uuid}" name="note-edit"><img class="tbl-icon" src="../images/edit.png" alt="Edit"/></button></td>
-        <td class="text-center"><button value="${this.uuid}" name="note-arch"><img class="tbl-icon" src="../images/archive.png" alt="Archive"/><button></td>
-        <td class="text-center"><button value="${this.uuid}" name="note-delete"><img class="tbl-icon" src="../images/delete.png" alt="Delete"/><button></td>
+        <td class="text-center">${(this.dates) ?? ""}</td>
+        <td class="text-center"><button value="${this.uuid}" name="note-edit"><img class="tbl-icon" src="./images/edit.png" alt="Edit"/></button></td>
+        <td class="text-center"><button value="${this.uuid}" name="note-arch"><img class="tbl-icon" src="./images/archive.png" alt="Archive"/><button></td>
+        <td class="text-center"><button value="${this.uuid}" name="note-delete"><img class="tbl-icon" src="./images/delete.png" alt="Delete"/><button></td>
       </tr>`;
   }  
+}
+
+class MessagesTable {
+  #messages;
+  #activeGrid;
+  #archiveGrid;
+  #notes;
+  constructor(activeGrid, archiveGrid) {
+    this.#activeGrid = activeGrid;
+    this.#archiveGrid = archiveGrid;
+
+
+    this.#notes = new Map();
+  }
+
+  addMessage(mess) {
+    if(mess) {
+      const message = new Message(mess.name, mess.category, mess.content);
+      this.#notes.set(message.uuid, message);
+      this.#activeGrid.insertAdjacentHTML("afterbegin", this.#notes.get(message.uuid).rowHTMLTable);
+      //this.showRow(null, mess);
+    }
+  }
+
+  modifyMessage(mess) {
+    if(mess) {
+      if (this.#notes.has(mess.uuid)) {
+        const message = this.#notes.get(mess.uuid);
+        message.name = mess.name;
+        message.category = mess.category;
+        message.content = mess.content;
+        this.showRow(old_mess, this.#notes.get(mess.uuid));
+      }
+    }
+  }
+
+  deleteMessage(mess) {
+    if (this.#notes.has(mess.uuid)) {
+      this.#notes.delete(mess.uuid);
+    }
+  }
+
+  showRow(old_mess, new_mess) {
+    //if((old_mess.uuid !== new_mess.uuid)&&(new_mess !== null))
+    this.#activeGrid.insertAdjacentHTML("afterbegin", row);
+  }
 }
 
 class Category {
@@ -81,7 +139,7 @@ class MessageHTMLForm {
   #errElement;
   static activeForm = null;
   static MODAL_ACTIVE_CLASS_NAME = 'modal-active';
-  constructor(block, form, inpMessageName, inpMessageCategory, inpMessageContent, btnClose, errElement, categoriesMap) {
+  constructor(block, form, inpMessageName, inpMessageCategory, inpMessageContent, btnClose, errElement) {
     this.#block = block;
     this.#form = form;
     this.#inpMessageName = inpMessageName;
@@ -90,7 +148,7 @@ class MessageHTMLForm {
     this.#btnClose = btnClose;
     this.#errElement = errElement;
 
-    this.#fillCategories(categoriesMap);
+    this.#fillCategories();
 
     this.#form.addEventListener('submit', this.addSubmitEventListener);
     this.#inpMessageName.addEventListener('blur', this.addBlurEventListener);
@@ -106,9 +164,9 @@ class MessageHTMLForm {
   get inpMessageCategory() { return this.#inpMessageCategory; }
   get inpMessageContent() { return this.#inpMessageContent; }
 
-  #fillCategories(categoriesMap) {
+  #fillCategories() {
     this.#inpMessageCategory.insertAdjacentHTML("beforeend", ` <option value="empty">-- Select category --</option>`);
-    categoriesMap.forEach((category, key) => {
+    Message.mapCategories.forEach((category, key) => {
       this.#inpMessageCategory.insertAdjacentHTML("beforeend", ` <option value="${key}">${category.name}</option>`);
     });
   }
@@ -135,37 +193,41 @@ class MessageHTMLForm {
     this.#errElement.label.textContent = "";
   }
 
+  resetCategory() {
+    this.#inpMessageCategory.selectedIndex = 0;
+  }
+
   isValid() {
     let valid = true;
     if (!this.#checkName()) {
       valid = false;
-      MessageHTMLForm.#setInputError(this.#inpMessageName)
+      MessageHTMLForm.setInputError(this.#inpMessageName)
     } else {
-      MessageHTMLForm.#unsetInputError(this.#inpMessageName)
+      MessageHTMLForm.unsetInputError(this.#inpMessageName)
     }
   
     if (!this.#checkCategory()) {
       valid = false;
-      MessageHTMLForm.#setInputError(this.#inpMessageCategory)
+      MessageHTMLForm.setInputError(this.#inpMessageCategory)
     } else {
-      MessageHTMLForm.#unsetInputError(this.#inpMessageCategory)
+      MessageHTMLForm.unsetInputError(this.#inpMessageCategory)
     }
 
     if (!this.#checkContent()) {
       valid = false;
-      MessageHTMLForm.#setInputError(this.#inpMessageContent)
+      MessageHTMLForm.setInputError(this.#inpMessageContent)
     } else {
-      MessageHTMLForm.#unsetInputError(this.#inpMessageContent)
+      MessageHTMLForm.unsetInputError(this.#inpMessageContent)
     }
     return valid; 
   }
 
   static #validateIsEmpty(element) {
     if (element.value === "") {
-      MessageHTMLForm.#setInputError(element);
+      MessageHTMLForm.setInputError(element);
       return true;
     } 
-    MessageHTMLForm.#unsetInputError(element);
+    MessageHTMLForm.unsetInputError(element);
     return false;
   }
 
@@ -181,7 +243,8 @@ class MessageHTMLForm {
           category: noteForm.inpMessageCategory.options[noteForm.inpMessageCategory.selectedIndex].value, 
           content: noteForm.inpMessageContent.value 
         };
-        (noteForm.form.id.includes("create"))? statistics.createNote(noteObj) : statistics.editNote(noteObj);
+        (noteForm.form.id.includes("create"))? globalThis.messagesTable.addMessage(noteObj) : globalThis.messagesTable.modifyMessage(noteObj);
+        //(noteForm.form.id.includes("create"))? statistics.createNote(noteObj) : statistics.editNote(noteObj);
         event.currentTarget.reset();
         noteForm.closeForm();
         return;
@@ -194,12 +257,12 @@ class MessageHTMLForm {
     MessageHTMLForm.#validateIsEmpty(event.currentTarget)
   }
 
-  static #setInputError = (element) => {
+  static setInputError = (element) => {
     element.classList.remove("input-success");
     element.classList.add("input-error");
   }
   
-  static #unsetInputError = (element) => {
+  static unsetInputError = (element) => {
     element.classList.add("input-success");
     element.classList.remove("input-error");
   }
@@ -211,134 +274,23 @@ class MessageHTMLForm {
 
   closeForm(event) {
     MessageHTMLForm.activeForm.block.classList.remove(MessageHTMLForm.MODAL_ACTIVE_CLASS_NAME);
-    //MessageHTMLForm.activeForm.resetInputElementsStyles(MessageHTMLForm.activeForm);
-    //MessageHTMLForm.resetInputElementsStyles();
+    MessageHTMLForm.unsetInputError(MessageHTMLForm.activeForm.inpMessageName);
+    MessageHTMLForm.unsetInputError(MessageHTMLForm.activeForm.inpMessageCategory);
+    MessageHTMLForm.unsetInputError(MessageHTMLForm.activeForm.inpMessageContent);
+    MessageHTMLForm.activeForm.resetCategory();
+    MessageHTMLForm.activeForm.hideError();
     MessageHTMLForm.activeForm = null;
   }
 
-  resetInputElementsStyles() {
-    if (MessageHTMLForm !== null) {
-      MessageHTMLForm.unsetInputError(MessageHTMLForm.activeForm.inpMessageName);
-      MessageHTMLForm.unsetInputError(MessageHTMLForm.activeForm.inpMessageCategory);
-      MessageHTMLForm.unsetInputError(MessageHTMLForm.activeForm.inpMessageContent);
-    }
-  }
 }
 
 //---------------------- 
 
-const mapCategories = new Map();
-mapCategories.set("task", new Category("../images/task.png", "Task"));
-mapCategories.set("randth", new Category("../images/random_thought.png", "Random Thought"));
-mapCategories.set("idea", new Category("../images/idea.png", "Idea"));
-mapCategories.set("quote", new Category("../images/quote.png", "Quote"));
 
-globalThis.MessageHTMLForms = [];
-globalThis.MessageHTMLForms.push(new MessageHTMLForm(
-  document.querySelector("#form-modal-note-create"), 
-  document.querySelector("#frm-note-create"), 
-  document.querySelector("#note-name__create"), 
-  document.querySelector("#note-category__create"), 
-  document.querySelector("#note-content__create"),
-  document.querySelector("#btn-close-form-create"),
-  {
-    block: document.querySelector("#modal-form-err-create"),
-    label: document.querySelector("#modal-form-err__create")
-  },
-  mapCategories,
-  //closeCreateNoteModal
-));
-
-globalThis.MessageHTMLForms.push(new MessageHTMLForm(
-  document.querySelector("#form-modal-note-edit"), 
-  document.querySelector("#frm-note-edit"), 
-  document.querySelector("#note-name__edit"), 
-  document.querySelector("#note-category__edit"), 
-  document.querySelector("#note-content__edit"),
-  document.querySelector("#btn-close-form-edit"),
-  {
-    block: document.querySelector("#modal-form-err-edit"),
-    label: document.querySelector("#modal-form-err__edit")
-  },
-  mapCategories,
-  //closeEditNoteModal
-));
-
-//---------------------- 
-
-
-const buttonCreateNote = document.querySelector("#btn-create-note"); 
-
-const formCreateNote = document.querySelector("#form-modal-note-create"); 
-const formEditNote = document.querySelector("#form-modal-note-edit"); 
-
-const btnCloseFormCreate = document.querySelector("#btn-close-form-create"); 
-const btnCloseFormEdit = document.querySelector("#btn-close-form-edit"); 
-
-buttonCreateNote.addEventListener("click", event => {
-//  let noteForm = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === "frm-note-create"));
-  let noteForm = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === "frm-note-create"));
-  noteForm[0].showForm();
-//  console.log(globalThis.MessageHTMLForms[0]);
-//  console.log(noteForm[0]);
-//  noteForm[0].showForm();
-
-  //openCreateNoteModal();
-})
-/*
-btnCloseFormCreate.addEventListener("click", event => {
-  //closeCreateNoteModal(event);
-
-  formCreateNote.classList.remove(MODAL_ACTIVE_CLASS_NAME);
-  let noteForm = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === event.currentTarget.id));
-  console.log("=------------------------------");
-  console.log(noteForm);
-  //noteForm.resetInputElementsStyles();
-
-
-
-})
-*/
-
-/*
-const openCreateNoteModal = () => {
-  formCreateNote.classList.add(MessageHTMLForm.MODAL_ACTIVE_CLASS_NAME);
-};
-
-const openEditNoteModal = () => {
-  formEditNote.classList.add(MessageHTMLForm.MODAL_ACTIVE_CLASS_NAME);
-};
-
-*/
-
-/*
-const closeCreateNoteModal = (event) => {
-  formCreateNote.classList.remove(MODAL_ACTIVE_CLASS_NAME);
-  let noteForm = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === event.currentTarget.id));
-  console.log(noteForm);
-  //formCreateNote.resetInputElementsStyles();
-}
-
-//formEditNote.addEventListener("click", event => {
-//  openEditNoteModal();
-//})
-
-btnCloseFormEdit.addEventListener("click", event => {
-  closeEditNoteModal();
-})
-
-
-const closeEditNoteModal = () => {
-  formEditNote.classList.remove(MODAL_ACTIVE_CLASS_NAME);
-  formEditNote.resetInputElementsStyles();
-}
-*/
-
-
-
-
-
-
+globalThis.messagesTable = new MessagesTable(
+  document.querySelector("table#active-records tbody"), 
+  document.querySelector("table#archive-records tbody")
+);
 
 const statistics = {
   catTask: {
@@ -380,9 +332,7 @@ const statistics = {
         this.catQuote.active++;
         break;
     }
-    //console.log(this.notesMap);
-    //this.active++;  
-    //this.refresh(note);
+    console.log(note_data);
   },
 
   editNote(note_data) {
@@ -474,6 +424,62 @@ const statistics = {
 */  
 }
 
+
+
+
+/*
+globalThis.grids = {
+  active: document.querySelector("table#active-records tbody"),
+  statistic: document.querySelector("table#statistic tbody"),
+  archiv: document.querySelector("table#archive-records tbody"),
+}
+*/
+
+
+globalThis.MessageHTMLForms = [];
+globalThis.MessageHTMLForms.push(new MessageHTMLForm(
+  document.querySelector("#form-modal-note-create"), 
+  document.querySelector("#frm-note-create"), 
+  document.querySelector("#note-name__create"), 
+  document.querySelector("#note-category__create"), 
+  document.querySelector("#note-content__create"),
+  document.querySelector("#btn-close-form-create"),
+  {
+    block: document.querySelector("#modal-form-err-create"),
+    label: document.querySelector("#modal-form-err__create")
+  }
+));
+
+globalThis.MessageHTMLForms.push(new MessageHTMLForm(
+  document.querySelector("#form-modal-note-edit"), 
+  document.querySelector("#frm-note-edit"), 
+  document.querySelector("#note-name__edit"), 
+  document.querySelector("#note-category__edit"), 
+  document.querySelector("#note-content__edit"),
+  document.querySelector("#btn-close-form-edit"),
+  {
+    block: document.querySelector("#modal-form-err-edit"),
+    label: document.querySelector("#modal-form-err__edit")
+  }
+));
+
+//---------------------- 
+
+
+const buttonCreateNote = document.querySelector("#btn-create-note"); 
+
+const formCreateNote = document.querySelector("#form-modal-note-create"); 
+const formEditNote = document.querySelector("#form-modal-note-edit"); 
+
+const btnCloseFormCreate = document.querySelector("#btn-close-form-create"); 
+const btnCloseFormEdit = document.querySelector("#btn-close-form-edit"); 
+
+buttonCreateNote.addEventListener("click", event => {
+  let noteForm = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === "frm-note-create"));
+  noteForm[0].showForm();
+})
+
+
 /*
 const addRecordToTable = record => {
   const row = `
@@ -493,22 +499,4 @@ const addRecordToTable = record => {
   document.querySelector("#active-records tbody").insertAdjacentHTML("afterbegin", row);
 };
 */
-/*
-document.querySelector("#frm-note-create").addEventListener("submit", event => {
-  event.preventDefault();
-  let inputsIsFull = true;
-  for (const input of frmInputs.entries()) {
-    if ((input[1].value === "") || (input[1].value === "empty")) inputsIsFull = false;
-  }
-  if (inputsIsFull)
-    addNoteRecord({
-      name: frmInputs.get("note-name").value,
-      created: new Date(),
-      //category_name: frmInputs.get("note-category").id,
-      categoryKey: frmInputs.get("note-category").value,
-      category: frmInputs.get("note-category").options[frmInputs.get("note-category").selectedIndex].text,
-      content: frmInputs.get("note-content").value,
-      dates: frmInputs.get("note-dates").value
-    });
-  event.currentTarget.reset();
-});*/
+
