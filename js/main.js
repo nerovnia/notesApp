@@ -5,7 +5,7 @@ class Message {
   #category;
   #content;
   #status;
-  constructor(name, category, content, uuid = crypto.randomUUID()) {
+  constructor(name, category, content, uuid = 't' + crypto.randomUUID()) {
     this.#uuid = uuid;
     this.#name = name;
     this.#created = new Date();
@@ -56,7 +56,7 @@ class Message {
 
   get rowHTMLTable() {
     return `
-      <tr>
+      <tr id="${this.uuid}">
         <td><img class="tbl-icon" src="${this.#category.icon}" alt="Category"/></td>
         <td>${this.name}</td>
         <td class="text-center">${this.created.toLocaleDateString()}</td>
@@ -71,15 +71,10 @@ class Message {
 }
 
 class MessagesTable {
-  #messages;
-  #activeGrid;
-  #archiveGrid;
   #notes;
-  constructor(activeGrid, archiveGrid) {
-    this.#activeGrid = activeGrid;
-    this.#archiveGrid = archiveGrid;
-
-
+  constructor() {
+    //this.#activeGrid = activeGrid;
+    //this.#archiveGrid = archiveGrid;
     this.#notes = new Map();
   }
 
@@ -87,7 +82,34 @@ class MessagesTable {
     if(mess) {
       const message = new Message(mess.name, mess.category, mess.content);
       this.#notes.set(message.uuid, message);
-      this.#activeGrid.insertAdjacentHTML("afterbegin", this.#notes.get(message.uuid).rowHTMLTable);
+      MessagesTable.activeGrid.insertAdjacentHTML("afterbegin", this.#notes.get(message.uuid).rowHTMLTable);
+      const row = document.querySelector(`#${message.uuid}`);
+      const rowButtons = row.getElementsByTagName("button");
+      for(let i=0; i<rowButtons.length; i++) {
+        let button = rowButtons[i];
+      //(row.getElementsByTagName("button")).forEach(button => {
+      //(row.getElementsByTagName("button")).forEach(button => {
+        switch(button.name) {
+          case 'note-edit':
+            button.addEventListener("click", (event) => {
+              //console.dir();
+            });
+            break;
+          case 'note-arch':
+            button.addEventListener("click", (event) => {
+
+            });
+            break;  
+          case 'note-delete':
+            button.addEventListener("click", (event) => {
+              globalThis.messagesTable.deleteMessage(event.currentTarget.parentElement.parentElement.id);
+              event.currentTarget.parentElement.parentElement.remove();
+            });
+            break;
+        }
+      };
+      //console.dir(row);
+      //console.dir(document.querySelector(`#${MessagesTable.activeGrid.id} tr#${message.uuid}`));
       //this.showRow(null, mess);
     }
   }
@@ -104,15 +126,16 @@ class MessagesTable {
     }
   }
 
-  deleteMessage(mess) {
-    if (this.#notes.has(mess.uuid)) {
-      this.#notes.delete(mess.uuid);
+  deleteMessage(uuid) {
+    if (this.#notes.has(uuid)) {
+      this.#notes.delete(uuid);
+      console.dir(this.#notes);
     }
   }
 
   showRow(old_mess, new_mess) {
     //if((old_mess.uuid !== new_mess.uuid)&&(new_mess !== null))
-    this.#activeGrid.insertAdjacentHTML("afterbegin", row);
+    MessagesTable.activeGrid.insertAdjacentHTML("afterbegin", row);
   }
 }
 
@@ -286,11 +309,9 @@ class MessageHTMLForm {
 
 //---------------------- 
 
-
-globalThis.messagesTable = new MessagesTable(
-  document.querySelector("table#active-records tbody"), 
-  document.querySelector("table#archive-records tbody")
-);
+MessagesTable.activeGrid = document.querySelector("table#active-records tbody");
+MessagesTable.archiveGrid = document.querySelector("table#archive-records tbody");
+globalThis.messagesTable = new MessagesTable();
 
 const statistics = {
   catTask: {
