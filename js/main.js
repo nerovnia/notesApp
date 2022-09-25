@@ -5,6 +5,7 @@ class Message {
   #category;
   #content;
   #status;
+  #pointToRow;
   constructor(name, category, content, uuid = 't' + crypto.randomUUID()) {
     this.#uuid = uuid;
     this.#name = name;
@@ -43,16 +44,17 @@ class Message {
   get content() { return this.#content; }
 
   get dates() { 
-    //const re = /\d{1,2}\/d{1,2}\/d{2,4}/g;
     const re = /(0?[1-9]|[12]\d|30|31)[^\w\d\r\n:](0?[1-9]|1[0-2])[^\w\d\r\n:](\d{4}|\d{2})/g;
     return this.content.match(re)?.join();
-   //   Need realise 
   }
 
   set status(status) {
     this.#status = status; 
   }
   get status() { return this.#status; }
+
+  set pointToRow(row) { this.#pointToRow = row; }
+  get pointToRow() { return this.#pointToRow; }
 
   get rowHTMLTable() {
     return `
@@ -84,35 +86,38 @@ class MessagesTable {
       this.#notes.set(message.uuid, message);
       MessagesTable.activeGrid.insertAdjacentHTML("afterbegin", this.#notes.get(message.uuid).rowHTMLTable);
       const row = document.querySelector(`#${message.uuid}`);
-      const rowButtons = row.getElementsByTagName("button");
-      for(let i=0; i<rowButtons.length; i++) {
-        let button = rowButtons[i];
-      //(row.getElementsByTagName("button")).forEach(button => {
-      //(row.getElementsByTagName("button")).forEach(button => {
-        switch(button.name) {
-          case 'note-edit':
-            button.addEventListener("click", (event) => {
-              //console.dir();
-            });
-            break;
-          case 'note-arch':
-            button.addEventListener("click", (event) => {
-
-            });
-            break;  
-          case 'note-delete':
-            button.addEventListener("click", (event) => {
-              globalThis.messagesTable.deleteMessage(event.currentTarget.parentElement.parentElement.id);
-              event.currentTarget.parentElement.parentElement.remove();
-            });
-            break;
-        }
-      };
+      message.pointToRow = row;
+      MessagesTable.setButtonsEventListeners(row);
       //console.dir(row);
       //console.dir(document.querySelector(`#${MessagesTable.activeGrid.id} tr#${message.uuid}`));
       //this.showRow(null, mess);
     }
   }
+
+  static setButtonsEventListeners(row) {
+    const rowButtons = row.getElementsByTagName("button");
+    for(let i=0; i<rowButtons.length; i++) {
+      let button = rowButtons[i];
+      switch(button.name) {
+        case 'note-edit':
+          button.addEventListener("click", (event) => {
+            //console.dir();
+          });
+          break;
+        case 'note-arch':
+          button.addEventListener("click", (event) => {
+            globalThis.messagesTable.archMessage(event.currentTarget.parentElement.parentElement.id);
+          });
+          break;  
+        case 'note-delete':
+          button.addEventListener("click", (event) => {
+            globalThis.messagesTable.deleteMessage(event.currentTarget.parentElement.parentElement.id);
+          });
+          break;
+      }
+    }
+  }  
+
 
   modifyMessage(mess) {
     if(mess) {
@@ -126,8 +131,36 @@ class MessagesTable {
     }
   }
 
+
+  archMessage(uuid) {
+    if (this.#notes.has(uuid)) {
+      let note = this.#notes.get(uuid);
+      if (note.status === 'active') {
+        note.status = 'archived';
+        note.pointToRow.remove();
+        MessagesTable.archiveGrid.insertAdjacentHTML("afterbegin", note.rowHTMLTable);
+        let row = document.querySelector(`#${note.uuid}`);
+        note.pointToRow = row;
+        MessagesTable.setButtonsEventListeners(row);
+      } else {
+        note.status = 'active';
+        note.pointToRow.remove();
+        MessagesTable.activeGrid.insertAdjacentHTML("afterbegin", note.rowHTMLTable);
+        let row = document.querySelector(`#${note.uuid}`);
+        note.pointToRow = row;
+        MessagesTable.setButtonsEventListeners(row);
+      }
+
+      //this.#notes.get(uuid).pointToRow.remove();
+      //this.#notes.delete(uuid);
+      //console.dir(this.#notes);
+    }
+  }
+
+
   deleteMessage(uuid) {
     if (this.#notes.has(uuid)) {
+      this.#notes.get(uuid).pointToRow.remove();
       this.#notes.delete(uuid);
       console.dir(this.#notes);
     }
