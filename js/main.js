@@ -56,6 +56,14 @@ class Message {
   set pointToRow(row) { this.#pointToRow = row; }
   get pointToRow() { return this.#pointToRow; }
 
+  get changeStatus() {
+    let status = this.#status;
+    return {
+      status: status[0].toUpperCase(),
+      picture: (status === 'active') ? 'archive.png' : 'active.png',
+    }
+  }
+
   get rowHTMLTable() {
     return `
       <tr id="${this.uuid}">
@@ -66,7 +74,7 @@ class Message {
         <td>${this.content}</td>
         <td class="text-center">${(this.dates) ?? ""}</td>
         <td class="text-center"><button value="${this.uuid}" name="note-edit"><img class="tbl-icon" src="./images/edit.png" alt="Edit"/></button></td>
-        <td class="text-center"><button value="${this.uuid}" name="note-arch"><img class="tbl-icon" src="./images/archive.png" alt="Archive"/><button></td>
+        <td class="text-center"><button value="${this.uuid}" name="note-arch"><img class="tbl-icon" src="./images/${this.changeStatus.picture}" alt="${this.changeStatus.status}"/><button></td>
         <td class="text-center"><button value="${this.uuid}" name="note-delete"><img class="tbl-icon" src="./images/delete.png" alt="Delete"/><button></td>
       </tr>`;
   }  
@@ -91,6 +99,25 @@ class MessagesTable {
       //console.dir(row);
       //console.dir(document.querySelector(`#${MessagesTable.activeGrid.id} tr#${message.uuid}`));
       //this.showRow(null, mess);
+    }
+  }
+  // ******************************************************************************************************************
+  modifyMessage(mess) {
+    if(mess) {
+      if (this.#notes.has(mess.uuid)) {
+        const modify_message = this.#notes.get(mess.uuid);
+        const old_category = modify_message.category;
+        modify_message.name = mess.name;
+        modify_message.category = mess.category;
+        modify_message.content = mess.content;
+        
+        /*
+        const message = this.#notes.get(mess.uuid);
+        message.name = mess.name;
+        message.category = mess.category;
+        message.content = mess.content;*/
+        this.showRow(old_category, modify_message);
+      }
     }
   }
 
@@ -118,20 +145,6 @@ class MessagesTable {
     }
   }  
 
-
-  modifyMessage(mess) {
-    if(mess) {
-      if (this.#notes.has(mess.uuid)) {
-        const message = this.#notes.get(mess.uuid);
-        message.name = mess.name;
-        message.category = mess.category;
-        message.content = mess.content;
-        this.showRow(old_mess, this.#notes.get(mess.uuid));
-      }
-    }
-  }
-
-
   archMessage(uuid) {
     if (this.#notes.has(uuid)) {
       let note = this.#notes.get(uuid);
@@ -156,7 +169,6 @@ class MessagesTable {
       //console.dir(this.#notes);
     }
   }
-
 
   deleteMessage(uuid) {
     if (this.#notes.has(uuid)) {
@@ -206,7 +218,7 @@ class MessageHTMLForm {
 
     this.#fillCategories();
 
-    this.#form.addEventListener('submit', this.addSubmitEventListener);
+    this.#form.addEventListener('submit', MessageHTMLForm.addSubmitEventListener);
     this.#inpMessageName.addEventListener('blur', this.addBlurEventListener);
     this.#inpMessageCategory.addEventListener('blur', this.addBlurEventListener);
     this.#inpMessageContent.addEventListener('blur', this.addBlurEventListener);
@@ -286,8 +298,18 @@ class MessageHTMLForm {
     MessageHTMLForm.unsetInputError(element);
     return false;
   }
+  // ***********************************************************************************************************************
+  static addShowEventListener(event) {
+    if(event.currentTarget.id === "btn-create-note") {
+      let noteForm = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === "frm-note-create"));
+      noteForm[0].showForm();
+    } else {
+      let noteForm = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === "frm-note-edit"));
+      noteForm[1].showForm();
+    }
+  }
 
-  addSubmitEventListener(event) {
+  static addSubmitEventListener(event) {
     event.preventDefault();
     let noteForms = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === event.currentTarget.id));
     if (!noteForms.isEmpty) {
@@ -300,7 +322,6 @@ class MessageHTMLForm {
           content: noteForm.inpMessageContent.value 
         };
         (noteForm.form.id.includes("create"))? globalThis.messagesTable.addMessage(noteObj) : globalThis.messagesTable.modifyMessage(noteObj);
-        //(noteForm.form.id.includes("create"))? statistics.createNote(noteObj) : statistics.editNote(noteObj);
         event.currentTarget.reset();
         noteForm.closeForm();
         return;
@@ -478,18 +499,6 @@ const statistics = {
 */  
 }
 
-
-
-
-/*
-globalThis.grids = {
-  active: document.querySelector("table#active-records tbody"),
-  statistic: document.querySelector("table#statistic tbody"),
-  archiv: document.querySelector("table#archive-records tbody"),
-}
-*/
-
-
 globalThis.MessageHTMLForms = [];
 globalThis.MessageHTMLForms.push(new MessageHTMLForm(
   document.querySelector("#form-modal-note-create"), 
@@ -528,29 +537,5 @@ const formEditNote = document.querySelector("#form-modal-note-edit");
 const btnCloseFormCreate = document.querySelector("#btn-close-form-create"); 
 const btnCloseFormEdit = document.querySelector("#btn-close-form-edit"); 
 
-buttonCreateNote.addEventListener("click", event => {
-  let noteForm = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === "frm-note-create"));
-  noteForm[0].showForm();
-})
-
-
-/*
-const addRecordToTable = record => {
-  const row = `
-    <tr>
-      <td><img class="tbl-icon" src="${categories.get(record.categoryKey).icon}" alt="Category"/></td>
-      <td>${record.name}</td>
-      <td class="text-center">${record.created.toLocaleDateString()}</td>
-      <td>${record.category}</td>
-      <td>${record.content}</td>
-      <td class="text-center">${record.dates}</td>
-      <td class="text-center"><button><img class="tbl-icon" src="../images/edit.png" alt="Edit"/></button></td>
-      <td class="text-center"><button><img class="tbl-icon" src="../images/archive.png" alt="Archive"/><button></td>
-      <td class="text-center"><button><img class="tbl-icon" src="../images/delete.png" alt="Delete"/><button></td>
-    </tr>`;
-  console.log(categories.get(record.category));
-  //console.log(record.category_name);
-  document.querySelector("#active-records tbody").insertAdjacentHTML("afterbegin", row);
-};
-*/
+buttonCreateNote.addEventListener("click", MessageHTMLForm.addShowEventListener);
 
