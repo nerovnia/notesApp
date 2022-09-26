@@ -374,7 +374,23 @@ MessagesTable.activeGrid = document.querySelector("table#active-records tbody");
 MessagesTable.archiveGrid = document.querySelector("table#archive-records tbody");
 globalThis.messagesTable = new MessagesTable();
 
-const statistics = {
+class categoryForStatistics {
+  #name;
+  #active;
+  #archived;
+  constructor(name, active, archived) {
+    this.#name = name;
+    this.active = active;
+    this.archived = archived;
+  }
+
+  get name() { return this.#name; }
+  get active() { return this.#active; }
+  get archived() { return this.#archived; }
+}
+
+class Statistics  {
+  constructor(categories)
   catTask: {
     active: 0,
     archived: 0
