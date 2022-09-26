@@ -17,32 +17,24 @@ class Message {
 
   static get mapCategories() { 
     const mapCategories = new Map();
-    mapCategories.set("task", new Category("./images/task.png", "Task"));
-    mapCategories.set("randth", new Category("./images/random_thought.png", "Random Thought"));
-    mapCategories.set("idea", new Category("./images/idea.png", "Idea"));
-    mapCategories.set("quote", new Category("./images/quote.png", "Quote"));
+    mapCategories.set("task", new Category("./images/task.png", "Task", "task"));
+    mapCategories.set("randth", new Category("./images/random_thought.png", "Random Thought", "randth"));
+    mapCategories.set("idea", new Category("./images/idea.png", "Idea", "idea"));
+    mapCategories.set("quote", new Category("./images/quote.png", "Quote", "quote"));
     return mapCategories;
   }
 
   get uuid() { return this.#uuid; }
-
   set name(name) { this.#name = name; }
   get name() { return this.#name; }
-
   get created() { return this.#created; }
-
   set category(category) { 
-    //this.#changeCathegory(this.#cathegory, cathegory, this.#status);
-    //refreshStatistics("update", cathegory);
     this.#category = category; 
   }
   get category() { return this.#category; }
-
   get icon() { return this.category.icon; }
-
   set content(content) { this.#content = content; }
   get content() { return this.#content; }
-
   get dates() { 
     const re = /(0?[1-9]|[12]\d|30|31)[^\w\d\r\n:](0?[1-9]|1[0-2])[^\w\d\r\n:](\d{4}|\d{2})/g;
     return this.content.match(re)?.join();
@@ -56,6 +48,14 @@ class Message {
   set pointToRow(row) { this.#pointToRow = row; }
   get pointToRow() { return this.#pointToRow; }
 
+  changeMessage(message) {
+    let cells = this.#pointToRow.querySelectorAll("td");
+    cells[0].querySelector("img").setAttribute("src", message.category.icon)
+    cells[1].textContent = message.name;
+    cells[3].textContent = message.category.name;
+    cells[4].textContent = message.content;
+  } 
+
   get changeStatus() {
     let status = this.#status;
     return {
@@ -63,7 +63,7 @@ class Message {
       picture: (status === 'active') ? 'archive.png' : 'active.png',
     }
   }
-
+  
   get rowHTMLTable() {
     return `
       <tr id="${this.uuid}">
@@ -78,6 +78,7 @@ class Message {
         <td class="text-center"><button value="${this.uuid}" name="note-delete"><img class="tbl-icon" src="./images/delete.png" alt="Delete"/><button></td>
       </tr>`;
   }  
+  
 }
 
 class MessagesTable {
@@ -87,7 +88,7 @@ class MessagesTable {
     //this.#archiveGrid = archiveGrid;
     this.#notes = new Map();
   }
-
+  
   addMessage(mess) {
     if(mess) {
       const message = new Message(mess.name, mess.category, mess.content);
@@ -96,30 +97,27 @@ class MessagesTable {
       const row = document.querySelector(`#${message.uuid}`);
       message.pointToRow = row;
       MessagesTable.setButtonsEventListeners(row);
-      //console.dir(row);
-      //console.dir(document.querySelector(`#${MessagesTable.activeGrid.id} tr#${message.uuid}`));
-      //this.showRow(null, mess);
     }
   }
-  // ******************************************************************************************************************
   modifyMessage(mess) {
     if(mess) {
       if (this.#notes.has(mess.uuid)) {
-        const modify_message = this.#notes.get(mess.uuid);
-        const old_category = modify_message.category;
-        modify_message.name = mess.name;
-        modify_message.category = mess.category;
-        modify_message.content = mess.content;
-        
-        /*
-        const message = this.#notes.get(mess.uuid);
-        message.name = mess.name;
-        message.category = mess.category;
-        message.content = mess.content;*/
-        this.showRow(old_category, modify_message);
+        const m_message = this.#notes.get(mess.uuid);
+        m_message.name = mess.name;
+        m_message.category = Message.mapCategories.get(mess.category);//mess.category;
+        m_message.content = mess.content;
+        m_message.changeMessage( {
+          name: mess.name,
+          category: Message.mapCategories.get(mess.category),
+          content: mess.content
+        });
       }
     }
   }
+
+  getMessage(uuid) {
+    return this.#notes.get(uuid);
+  } 
 
   static setButtonsEventListeners(row) {
     const rowButtons = row.getElementsByTagName("button");
@@ -127,9 +125,7 @@ class MessagesTable {
       let button = rowButtons[i];
       switch(button.name) {
         case 'note-edit':
-          button.addEventListener("click", (event) => {
-            //console.dir();
-          });
+          button.addEventListener("click", MessageHTMLForm.addShowEventListener);
           break;
         case 'note-arch':
           button.addEventListener("click", (event) => {
@@ -163,10 +159,6 @@ class MessagesTable {
         note.pointToRow = row;
         MessagesTable.setButtonsEventListeners(row);
       }
-
-      //this.#notes.get(uuid).pointToRow.remove();
-      //this.#notes.delete(uuid);
-      //console.dir(this.#notes);
     }
   }
 
@@ -177,24 +169,23 @@ class MessagesTable {
       console.dir(this.#notes);
     }
   }
-
-  showRow(old_mess, new_mess) {
-    //if((old_mess.uuid !== new_mess.uuid)&&(new_mess !== null))
-    MessagesTable.activeGrid.insertAdjacentHTML("afterbegin", row);
-  }
 }
 
 class Category {
   #icon;
   #name;
-  constructor(icon, name) {
+  #item;
+  constructor(icon, name, item) {
     this.#icon = icon;
     this.#name = name;
+    this.#item = item;
   }
 
   get icon() { return this.#icon; }
 
   get name() { return this.#name; }
+
+  get item() { return this.#item; }
 }
 
 class MessageHTMLForm {
@@ -206,6 +197,7 @@ class MessageHTMLForm {
   #btnClose;
   #errElement;
   static activeForm = null;
+  static mess_uuid = null;
   static MODAL_ACTIVE_CLASS_NAME = 'modal-active';
   constructor(block, form, inpMessageName, inpMessageCategory, inpMessageContent, btnClose, errElement) {
     this.#block = block;
@@ -298,14 +290,14 @@ class MessageHTMLForm {
     MessageHTMLForm.unsetInputError(element);
     return false;
   }
-  // ***********************************************************************************************************************
+
   static addShowEventListener(event) {
     if(event.currentTarget.id === "btn-create-note") {
       let noteForm = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === "frm-note-create"));
-      noteForm[0].showForm();
+      noteForm[0].showForm(event);
     } else {
       let noteForm = globalThis.MessageHTMLForms.filter(messageHTMLForm => (messageHTMLForm.form.id === "frm-note-edit"));
-      noteForm[1].showForm();
+      noteForm[0].showForm(event);
     }
   }
 
@@ -317,10 +309,12 @@ class MessageHTMLForm {
       if (noteForm.isValid()) {
         noteForm.hideError();
         let noteObj = { 
+          uuid: MessageHTMLForm.mess_uuid,
           name: noteForm.inpMessageName.value, 
           category: noteForm.inpMessageCategory.options[noteForm.inpMessageCategory.selectedIndex].value, 
           content: noteForm.inpMessageContent.value 
         };
+        noteForm.form.removeAttribute("value");
         (noteForm.form.id.includes("create"))? globalThis.messagesTable.addMessage(noteObj) : globalThis.messagesTable.modifyMessage(noteObj);
         event.currentTarget.reset();
         noteForm.closeForm();
@@ -344,8 +338,20 @@ class MessageHTMLForm {
     element.classList.remove("input-error");
   }
 
-  showForm() {
+  showForm(event) {
     MessageHTMLForm.activeForm = this;
+    if(event.currentTarget.getAttribute("name") === "note-edit") {
+      const edit_message = globalThis.messagesTable.getMessage(event.currentTarget.getAttribute("value"));
+      MessageHTMLForm.mess_uuid =  event.currentTarget.getAttribute("value");
+      this.inpMessageName.value = edit_message.name;
+      for (let i=0; i < this.inpMessageCategory.options.length; i++) {
+        if(this.inpMessageCategory.options[i].value === edit_message.category.item) {
+          this.inpMessageCategory.selectedIndex = i;
+          break;
+        }
+      }
+      this.inpMessageContent.value = edit_message.content;
+    }
     this.#block.classList.add(MessageHTMLForm.MODAL_ACTIVE_CLASS_NAME);
   }
 
@@ -356,6 +362,7 @@ class MessageHTMLForm {
     MessageHTMLForm.unsetInputError(MessageHTMLForm.activeForm.inpMessageContent);
     MessageHTMLForm.activeForm.resetCategory();
     MessageHTMLForm.activeForm.hideError();
+    MessageHTMLForm.mess_uuid = null;
     MessageHTMLForm.activeForm = null;
   }
 
@@ -491,12 +498,6 @@ const statistics = {
       };
     } 
   },
-/*
-  refresh(note) {
-     //Need realise 
-    throw error;
-  }
-*/  
 }
 
 globalThis.MessageHTMLForms = [];
