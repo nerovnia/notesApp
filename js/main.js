@@ -365,14 +365,38 @@ class MessageHTMLForm {
     MessageHTMLForm.mess_uuid = null;
     MessageHTMLForm.activeForm = null;
   }
+}
 
+
+class Broker {
+  constructor() {
+    this.subscribers = {};
+  }
+
+  on(event, func) {
+    if (!this.subscribers[event])
+      this.subscribers[event] = [];
+    this.subscribers[event].push(func);
+  }
+
+  messageEvents(event, data) {
+    if (this.subscribers[event])
+      this.subscribers[event].forEach(l => l(data));
+  }
 }
 
 //---------------------- 
 
+let broker = new Broker();
+
 MessagesTable.activeGrid = document.querySelector("table#active-records tbody");
 MessagesTable.archiveGrid = document.querySelector("table#archive-records tbody");
 globalThis.messagesTable = new MessagesTable();
+
+
+
+
+
 
 class categoryForStatistics {
   #name;
@@ -389,6 +413,8 @@ class categoryForStatistics {
   get archived() { return this.#archived; }
 }
 
+
+/*
 class Statistics  {
   constructor(categories)
   catTask: {
@@ -435,7 +461,7 @@ class Statistics  {
 
   editNote(note_data) {
     console.log(note_data)
-    /* Need realise */
+   */ /* Need realise */ /*
     //throw error;
   },
 
@@ -515,7 +541,7 @@ class Statistics  {
     } 
   },
 }
-
+*/
 globalThis.MessageHTMLForms = [];
 globalThis.MessageHTMLForms.push(new MessageHTMLForm(
   document.querySelector("#form-modal-note-create"), 
