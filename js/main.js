@@ -1,3 +1,22 @@
+class Broker {
+  constructor() {
+    this.subscribers = {};
+  }
+
+  on(event, func) {
+    if (!this.subscribers[event])
+      this.subscribers[event] = [];
+    this.subscribers[event].push(func);
+  }
+
+  messageEvents(event, data) {
+    if (this.subscribers[event])
+      this.subscribers[event].forEach(l => l(data));
+  }
+}
+
+let broker = new Broker();
+
 class Message {
   #uuid;
   #name;
@@ -97,12 +116,14 @@ class MessagesTable {
       const row = document.querySelector(`#${message.uuid}`);
       message.pointToRow = row;
       MessagesTable.setButtonsEventListeners(row);
+      broker.messageEvents('mess-new',{category: mess.category})
     }
   }
   modifyMessage(mess) {
     if(mess) {
       if (this.#notes.has(mess.uuid)) {
         const m_message = this.#notes.get(mess.uuid);
+        let old_category = m_message.category;
         m_message.name = mess.name;
         m_message.category = Message.mapCategories.get(mess.category);//mess.category;
         m_message.content = mess.content;
@@ -111,6 +132,7 @@ class MessagesTable {
           category: Message.mapCategories.get(mess.category),
           content: mess.content
         });
+        broker.messageEvents('mess-modify',{old_category: old_category, new_category: m_message.category, status: m_message.status});
       }
     }
   }
@@ -159,14 +181,20 @@ class MessagesTable {
         note.pointToRow = row;
         MessagesTable.setButtonsEventListeners(row);
       }
+      broker.messageEvents('mess-status-change',{category: note.category, new_status: note.status})
     }
   }
 
   deleteMessage(uuid) {
     if (this.#notes.has(uuid)) {
+      //let {category, status} = {...this.#notes.get(uuid)};
+      let category = this.#notes.get(uuid).category.item;
+      let status = this.#notes.get(uuid).status;
+      //console.dir(this.#notes.get(uuid));
       this.#notes.get(uuid).pointToRow.remove();
       this.#notes.delete(uuid);
-      console.dir(this.#notes);
+      broker.messageEvents('mess-delete',{category: category, status: status})
+      //console.dir(this.#notes);
     }
   }
 }
@@ -367,181 +395,85 @@ class MessageHTMLForm {
   }
 }
 
-
-class Broker {
-  constructor() {
-    this.subscribers = {};
-  }
-
-  on(event, func) {
-    if (!this.subscribers[event])
-      this.subscribers[event] = [];
-    this.subscribers[event].push(func);
-  }
-
-  messageEvents(event, data) {
-    if (this.subscribers[event])
-      this.subscribers[event].forEach(l => l(data));
-  }
-}
-
-//---------------------- 
-
-let broker = new Broker();
-
-MessagesTable.activeGrid = document.querySelector("table#active-records tbody");
-MessagesTable.archiveGrid = document.querySelector("table#archive-records tbody");
-globalThis.messagesTable = new MessagesTable();
-
-
-
-
-
-
-class categoryForStatistics {
+class CategoryForStatistics {
   #name;
   #active;
   #archived;
-  constructor(name, active, archived) {
+  constructor(name) {
     this.#name = name;
-    this.active = active;
-    this.archived = archived;
+    this.#active = 0;
+    this.#archived = 0;
   }
 
   get name() { return this.#name; }
   get active() { return this.#active; }
   get archived() { return this.#archived; }
+
+  set active(active) { this.#active = active; }
+  set archived(archived) { this.#archived = archived; }
 }
 
+class Statisics {
+  constructor() {
+    this.statisticCategories = new Map();
+    Message.mapCategories.forEach((val,key) => {
+      this.statisticCategories.set(key, new CategoryForStatistics(key))
+    })
 
-/*
-class Statistics  {
-  constructor(categories)
-  catTask: {
-    active: 0,
-    archived: 0
-  },
-  catRandomThoughts: {
-    active: 0,
-    archived: 0
-  },
-  catIdea: {
-    active: 0,
-    archived: 0
-  },
-  catQuote: {
-    active: 0,
-    archived: 0
-  },
-  notesMap: new Map(),
+    broker.on('mess-new', data => this.new(data));
+    broker.on('mess-modify', data => this.modify(data));
+    broker.on('mess-delete', data => this.delete(data));
+    broker.on('mess-status-change', data => this.statusChange(data));
+  }
 
-  createNote(note_data) {
-    let mess = new Message(
-      note_data.name, 
-      note_data.category, 
-      note_data.content
-      );
-    this.notesMap.set(mess.uuid, mess);
-    switch(mess.category) {
-      case 'task':
-        this.catTask.active++;
-        break;
-      case 'randth':
-        this.catRandomThoughts.active++;
-        break;
-      case 'idea':
-        this.catIdea.active++;
-        break;
-      case 'quote':
-        this.catQuote.active++;
-        break;
+  new(data) {
+    this.statisticCategories.get(data.category).active++;
+    console.dir(this);
+  }
+
+  modify(data) {
+    if (data.status === 'active') {
+      this.statisticCategories.get(data.old_category.item).active--;
+      this.statisticCategories.get(data.new_category.item).archived++;
+    } else {
+      this.statisticCategories.get(data.old_category.item).archived--;
+      this.statisticCategories.get(data.new_category.item).active++;
     }
-    console.log(note_data);
-  },
+    console.dir(this);
+  }
 
-  editNote(note_data) {
-    console.log(note_data)
-   */ /* Need realise */ /*
-    //throw error;
-  },
-
-  deleteNote(uuid) {
-    if (!this.notesMap.has(uuid)) {
-      return;
+  delete(data) {
+    if (data.status === 'active') {
+      this.statisticCategories.get(data.category).active--;
+    } else {
+      this.statisticCategories.get(data.category).archived--;
     }
-    let mess = this.notesMap.get(uuid);
-    switch(mess.category) {
-      case 'task':
-        (mess.status === 'active') ? this.catTask.active--: this.catTask.archived--;
-        break;
-      case 'randth':
-        (mess.status === 'active') ? this.catRandomThoughts.active--: this.catRandomThoughts.archived--;
-        break;
-      case 'idea':
-        (mess.status === 'active') ? this.catIdea.active--: this.catIdea.archived--;
-        break;
-      case 'quote':
-        (mess.status === 'active') ? this.catQuote.active--: this.catQuote.archived--;
-        break;
-    };
-    this.notesMap.delete(uuid);
-  },
+    console.dir(this);
+  }
 
-  archiveNote(uuid) {
-    if (!this.notesMap.has(uuid)) {
-      return;
+  statusChange(data) {
+    if (data.new_status === 'active') {
+      this.statisticCategories.get(data.category.item).active++;
+      this.statisticCategories.get(data.category.item).archived--;
+    } else {
+      this.statisticCategories.get(data.category.item).active--;
+      this.statisticCategories.get(data.category.item).archived++;
     }
-    let mess = this.notesMap.get(uuid);
-    if (mess.status === 'active') {
-      switch(mess.category) {
-        case 'task':
-          this.catTask.active--; 
-          this.catTask.archived++;
-          break;
-        case 'randth':
-          this.catRandomThoughts.active--; 
-          this.catRandomThoughts.archived++;
-          break;
-        case 'idea':
-          this.catIdea.active--; 
-          this.catIdea.archived++;
-          break;
-        case 'quote':
-          this.catQuote.active--; 
-          this.catQuote.archived++;
-          break;
-      };
-    } 
-  },
-
-  activateNote(uuid) {
-    if (!this.notesMap.has(uuid)) {
-      return;
-    }
-    let mess = this.notesMap.get(uuid);
-    if (mess.status === 'archived') {
-      switch(mess.category) {
-        case 'task':
-          this.catTask.active++; 
-          this.catTask.archived--;
-          break;
-        case 'randth':
-          this.catRandomThoughts.active++; 
-          this.catRandomThoughts.archived--;
-          break;
-        case 'idea':
-          this.catIdea.active++; 
-          this.catIdea.archived--;
-          break;
-        case 'quote':
-          this.catQuote.active++; 
-          this.catQuote.archived--;
-          break;
-      };
-    } 
-  },
+    console.dir(data);
+  }
 }
-*/
+
+//---------------------- 
+
+
+MessagesTable.activeGrid = document.querySelector("table#active-records tbody");
+MessagesTable.archiveGrid = document.querySelector("table#archive-records tbody");
+globalThis.messagesTable = new MessagesTable();
+let statistica = new Statisics();
+
+
+
+
 globalThis.MessageHTMLForms = [];
 globalThis.MessageHTMLForms.push(new MessageHTMLForm(
   document.querySelector("#form-modal-note-create"), 
