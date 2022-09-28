@@ -187,14 +187,11 @@ class MessagesTable {
 
   deleteMessage(uuid) {
     if (this.#notes.has(uuid)) {
-      //let {category, status} = {...this.#notes.get(uuid)};
       let category = this.#notes.get(uuid).category.item;
       let status = this.#notes.get(uuid).status;
-      //console.dir(this.#notes.get(uuid));
       this.#notes.get(uuid).pointToRow.remove();
       this.#notes.delete(uuid);
       broker.messageEvents('mess-delete',{category: category, status: status})
-      //console.dir(this.#notes);
     }
   }
 }
@@ -396,28 +393,99 @@ class MessageHTMLForm {
 }
 
 class CategoryForStatistics {
-  #name;
-  #active;
-  #archived;
   constructor(name) {
-    this.#name = name;
-    this.#active = 0;
-    this.#archived = 0;
+    this._name = name;
+    this._active = 0;
+    this._archived = 0;
   }
 
-  get name() { return this.#name; }
-  get active() { return this.#active; }
-  get archived() { return this.#archived; }
+  get name() { return this._name; }
+  get active() { return this._active; }
+  get archived() { return this._archived; }
 
-  set active(active) { this.#active = active; }
-  set archived(archived) { this.#archived = archived; }
+  set active(active) { this._active = active; }
+  set archived(archived) { this._archived = archived; }
+}
+
+class CategoryForStatisticsHTML extends CategoryForStatistics {
+  #rowHTML;
+  #startCellHTML;
+  #endCellHTML;
+  #categoryCellHTML;
+  #activeCellHTML;
+  #archivedCellHTML;
+  constructor(name, htmlStatisticTable) { 
+    super(name);
+    this.#rowHTML = document.createElement('tr');
+    this.#rowHTML.hidden = true;
+
+    this.#startCellHTML = document.createElement('td');
+    this.#endCellHTML = document.createElement('td');
+    this.#categoryCellHTML = document.createElement('td');
+    this.#activeCellHTML = document.createElement('td');
+    this.#archivedCellHTML = document.createElement('td');
+    
+    htmlStatisticTable.insertAdjacentElement('beforeend', this.#rowHTML);
+
+    this.#rowHTML.insertAdjacentElement('beforeend', this.#startCellHTML);
+    this.#rowHTML.insertAdjacentElement('beforeend', this.#categoryCellHTML);
+    this.#rowHTML.insertAdjacentElement('beforeend', this.#activeCellHTML);
+    this.#rowHTML.insertAdjacentElement('beforeend', this.#archivedCellHTML);
+    this.#rowHTML.insertAdjacentElement('beforeend', this.#endCellHTML);
+    
+    this.#startCellHTML.innerHTML = `<img class="tbl-icon" src="${Message.mapCategories.get(this.name).icon}" alt="Category" />`;
+
+    this.#categoryCellHTML.classList.add("text-center");
+    this.#activeCellHTML.classList.add("text-center");
+    this.#archivedCellHTML.classList.add("text-center");
+
+    this.#categoryCellHTML.innerText = Message.mapCategories.get(this.name).name;
+    this.#activeCellHTML.innerText = this.active;
+    this.#archivedCellHTML.innerText = this.archived;
+  }
+
+  set textActive(textActive) { this.#activeCellHTML.innerText = textActive; }
+  set textArchived(textArchived) { this.#archivedCellHTML.innerText = textArchived; }
+
+  set active(active) { 
+    super.active = active;
+    this.#activeCellHTML.innerText = super.active;
+    this.#checkShowOrHideHTMLRow();
+  }
+  set archived(archived) { 
+    super.archived = archived; 
+    this.#archivedCellHTML.innerText = super.archived;
+    this.#checkShowOrHideHTMLRow();
+  }
+
+  get active() { return super.active }
+  get archived() { return super.archived }
+  
+  #show() {
+    this.#rowHTML.hidden = false;
+  }
+
+  #hide() {
+    this.#rowHTML.hidden = true;
+  }
+
+  #checkShowOrHideHTMLRow() {
+    if ((this._active === 0) && (this._archived === 0)) {
+      this.#hide();
+    } else {
+      this.#show();
+    }
+  }
+
 }
 
 class Statisics {
-  constructor() {
+  #statisticHTMLTable;
+  constructor(statisticHTMLTable) {
+    this.#statisticHTMLTable = statisticHTMLTable;
     this.statisticCategories = new Map();
     Message.mapCategories.forEach((val,key) => {
-      this.statisticCategories.set(key, new CategoryForStatistics(key))
+      this.statisticCategories.set(key, new CategoryForStatisticsHTML(key, this.#statisticHTMLTable));
     })
 
     broker.on('mess-new', data => this.new(data));
@@ -427,19 +495,17 @@ class Statisics {
   }
 
   new(data) {
-    this.statisticCategories.get(data.category).active++;
-    console.dir(this);
+    this.statisticCategories.get(data.category).active+=1;
   }
 
   modify(data) {
     if (data.status === 'active') {
       this.statisticCategories.get(data.old_category.item).active--;
-      this.statisticCategories.get(data.new_category.item).archived++;
+      this.statisticCategories.get(data.new_category.item).active++;
     } else {
       this.statisticCategories.get(data.old_category.item).archived--;
-      this.statisticCategories.get(data.new_category.item).active++;
+      this.statisticCategories.get(data.new_category.item).archived++;
     }
-    console.dir(this);
   }
 
   delete(data) {
@@ -448,7 +514,6 @@ class Statisics {
     } else {
       this.statisticCategories.get(data.category).archived--;
     }
-    console.dir(this);
   }
 
   statusChange(data) {
@@ -459,20 +524,13 @@ class Statisics {
       this.statisticCategories.get(data.category.item).active--;
       this.statisticCategories.get(data.category.item).archived++;
     }
-    console.dir(data);
   }
 }
-
-//---------------------- 
-
 
 MessagesTable.activeGrid = document.querySelector("table#active-records tbody");
 MessagesTable.archiveGrid = document.querySelector("table#archive-records tbody");
 globalThis.messagesTable = new MessagesTable();
-let statistica = new Statisics();
-
-
-
+let statistica = new Statisics(document.querySelector("table#statistic tbody"));
 
 globalThis.MessageHTMLForms = [];
 globalThis.MessageHTMLForms.push(new MessageHTMLForm(
@@ -500,8 +558,6 @@ globalThis.MessageHTMLForms.push(new MessageHTMLForm(
     label: document.querySelector("#modal-form-err__edit")
   }
 ));
-
-//---------------------- 
 
 
 const buttonCreateNote = document.querySelector("#btn-create-note"); 
