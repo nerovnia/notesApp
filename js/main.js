@@ -527,6 +527,8 @@ class Statisics {
   }
 }
 
+// Initialisation block
+
 MessagesTable.activeGrid = document.querySelector("table#active-records tbody");
 MessagesTable.archiveGrid = document.querySelector("table#archive-records tbody");
 globalThis.messagesTable = new MessagesTable();
